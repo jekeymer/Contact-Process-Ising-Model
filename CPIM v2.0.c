@@ -20,19 +20,19 @@
 struct simulation
   {
   int lattice_configuration[X_SIZE][Y_SIZE]; /* Store latice configuration */
-  gint run;                   /* Time handler tag */
-  gboolean running;           /* Are we running? */
-  gboolean initialized;       /* Have we been initialized? */
-  int generation_time;        /* Generations simulated */
-  int influence_radius;
-  double occupancy;           /* Lattice occupancy */
-  double up;
-  double down;
-  double birth_rate;
-  double death_rate;
-  double temperature;         /* Ising model's temperature (T) */
-  double coupling;            /* Ising model's coupling (J) parameter */
-  } s;                        /* Instance s of struct */
+gint run;                   /* Time handler tag */
+gboolean running;           /* Are we running? */
+gboolean initialized;       /* Have we been initialized? */
+int generation_time;        /* Generations simulated */
+int influence_radius;       /* Distance (in sites) of Ising-like interactions */
+double occupancy;           /* Lattice occupancy */
+double up;                  /* Keeps track of spins in the up (+1) state */
+double down;                /* Keeps track of spins in the down (-1) state */
+double birth_rate;          /* Contact Process' birth rate */
+double death_rate;          /* Contact Process' death rate */
+double temperature;         /* Ising model's temperature (T) */
+double coupling;            /* Ising model's coupling (J) parameter */
+} s;                        /* Instance s of struct */
 
 
 /* Declare put_pixel function to access individual pixel data on a pixel buffer.
@@ -78,13 +78,16 @@ static void paint_lattice (gpointer data)
       switch (s.lattice_configuration[x][y])
         {
         case 0:	/* Empty site. Paint white */
-          put_pixel (p, (int) x, (int) y, (guchar) 255, (guchar) 255, (guchar) 255, 255);
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 255, (guchar) 255, (guchar) 255, 255);
           break;
         case 1:	/* Occupied, +1 site. Paint red */
-          put_pixel (p, (int) x, (int) y, (guchar) 249, (guchar) 237, (guchar) 105, 255);
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 249, (guchar) 237, (guchar) 105, 255);
           break;
         case -1:	/* Occupied, -1 site. Paint green */
-          put_pixel (p, (int) x, (int) y, (guchar) 106, (guchar) 44, (guchar) 112, 255);
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 106, (guchar) 44, (guchar) 112, 255);
           break;
         }
       }
@@ -94,7 +97,8 @@ static void paint_lattice (gpointer data)
   }
 
 
-/* Function to get the closest neighbors (separated by r sites) of a given site in the lattice */
+/* Function to get the closest neighbors (separated by r sites) of a given site 
+   in the lattice */
 void get_closest_neighbors(int x, int y, int r, int* neighbors)
   {
   int n = 0;
@@ -154,23 +158,30 @@ int update_lattice (gpointer data)
     switch (s.lattice_configuration[random_x_coor][random_y_coor])
       {
       case 0: /* Site is empty */
-      /* Chose a random neighbor from the num_neighbors posible ones */
-        get_closest_neighbors (random_x_coor, random_y_coor, contact_process_radius, neighbors);
-        random_neighbor_state = neighbors[(int) floor (genrand64_real3 () * (num_neighbors))];
-        /* If its random neighbor is occupied: put a 1 copy at the focal site with probability brith_rate * dt */
+        /* Chose a random neighbor from the num_neighbors posible ones */
+        get_closest_neighbors (random_x_coor, random_y_coor, 
+                               contact_process_radius, neighbors);
+        random_neighbor_state = neighbors[(int) floor (genrand64_real3 () 
+                                          * (num_neighbors))];
+        /* If its random neighbor is occupied: put a copy at the focal site 
+           with probability brith_rate * dt */
         if (genrand64_real2 () < s.birth_rate)
           {
           if (random_neighbor_state == 1)
             {
-            s.lattice_configuration[random_x_coor][random_y_coor] = 1; s.occupancy ++; s.up ++;
+            s.lattice_configuration[random_x_coor][random_y_coor] = 1; 
+            s.occupancy ++; 
+            s.up ++;
             }
           else if (random_neighbor_state == -1)
             {
-            s.lattice_configuration[random_x_coor][random_y_coor] = -1; s.occupancy ++; s.down ++;
+            s.lattice_configuration[random_x_coor][random_y_coor] = -1;
+            s.occupancy ++;
+            s.down ++;
             }
           }
         break; /* break case 0 */
-      case 1: /* Focal point is in state up (+1) */
+      case 1: /* Focal point is in the up (+1) state */
         if (genrand64_real2 () < s.death_rate)
           {
           s.lattice_configuration[random_x_coor][random_y_coor] = 0;
@@ -191,7 +202,7 @@ int update_lattice (gpointer data)
             }
           }
         break;
-      case -1: /* Focal point is in state down (-1) */
+      case -1: /* Focal point is in the down (-1) state */
         if (genrand64_real2 () < s.death_rate)
           {
           s.lattice_configuration[random_x_coor][random_y_coor]= 0;
@@ -217,7 +228,8 @@ int update_lattice (gpointer data)
   s.generation_time ++;
   paint_lattice (data);
   g_print ("Gen: %d \t Occupancy: %f \t Up: %f \t Down: %f\n", 
-           s.generation_time, s.occupancy/(X_SIZE*Y_SIZE), s.up/s.occupancy, s.down/s.occupancy);
+           s.generation_time, s.occupancy/(X_SIZE*Y_SIZE), 
+           s.up/s.occupancy, s.down/s.occupancy);
   return 0;
   }
 
@@ -396,59 +408,59 @@ static void activate (GtkApplication *app, gpointer user_data)
   influence_radius_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 3, 1);
   influence_radius_label = gtk_label_new ("radius");
   g_signal_connect (influence_radius_scale, "value-changed", G_CALLBACK (influence_radius_scale_moved),  influence_radius_label);
-  gtk_grid_attach (GTK_GRID (grid), influence_radius_scale, 0, 0, 1, 1); // position (0,0) spanning 2 col and 1 row
-  gtk_grid_attach (GTK_GRID (grid),  influence_radius_label, 1, 0, 1, 1); // position (1,0) spanning 3 col and 1 row
+  gtk_grid_attach (GTK_GRID (grid), influence_radius_scale, 0, 0, 1, 1); /* Position (0,0) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid),  influence_radius_label, 1, 0, 1, 1); /* Position (1,0) spanning 1 col and 1 row */
 
   /* Birth rate scale slide bar */
   birth_rate_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
   birth_rate_label = gtk_label_new ("beta");
   g_signal_connect (birth_rate_scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), birth_rate_label);
-  gtk_grid_attach (GTK_GRID (grid), birth_rate_scale, 0, 1, 1, 1); // position (0,0) spanning 2 col and 1 row
-  gtk_grid_attach (GTK_GRID (grid), birth_rate_label, 1, 1, 1, 1); // position (1,0) spanning 3 col and 1 row
+  gtk_grid_attach (GTK_GRID (grid), birth_rate_scale, 0, 1, 1, 1); /* Position (0,1) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), birth_rate_label, 1, 1, 1, 1); /* Position (1,1) spanning 1 col and 1 row */
 
   /* Death rate scale slide bar */
   death_rate_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
   death_rate_label = gtk_label_new ("delta"); //LABEL to be shown J
   g_signal_connect (death_rate_scale, "value-changed", G_CALLBACK (death_rate_scale_moved), death_rate_label);
-  gtk_grid_attach (GTK_GRID (grid), death_rate_scale, 2, 1, 1, 1); // position (3,0) spanning 2 col and 1 row
-  gtk_grid_attach (GTK_GRID (grid), death_rate_label, 3, 1, 1, 1); // position (4,0) spanning 3 col and 1 row
+  gtk_grid_attach (GTK_GRID (grid), death_rate_scale, 2, 1, 1, 1); /* Position (2,1) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), death_rate_label, 3, 1, 1, 1); /* Position (3,1) spanning 1 col and 1 row */
 
   /* Temperature (T) scale slide bar */
   temperature_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.001, 50, 0.001);
   temperature_label = gtk_label_new ("temperature"); //LABEL to be shown T
   g_signal_connect (temperature_scale, "value-changed", G_CALLBACK (temperature_scale_moved), temperature_label);
-  gtk_grid_attach (GTK_GRID (grid), temperature_scale, 0, 2, 1, 1); // position (0,0) spanning 2 col and 1 row
-  gtk_grid_attach (GTK_GRID (grid), temperature_label, 1, 2, 1, 1); // position (1,0) spanning 3 col and 1 row
+  gtk_grid_attach (GTK_GRID (grid), temperature_scale, 0, 2, 1, 1); /* Position (0,2) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), temperature_label, 1, 2, 1, 1); /* Position (1,2) spanning 1 col and 1 row */
 
   /* Coupling (J) scale slide bar */
   coupling_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, -1.0, 1.0, 0.01);
   coupling_label = gtk_label_new ("coupling"); //LABEL to be shown J
   g_signal_connect (coupling_scale,"value-changed", G_CALLBACK (coupling_scale_moved), coupling_label);
-  gtk_grid_attach (GTK_GRID (grid), coupling_scale, 2, 2, 1, 1); // position (3,0) spanning 2 col and 1 row
-  gtk_grid_attach (GTK_GRID (grid), coupling_label, 3, 2, 1, 1); // position (4,0) spanning 3 col and 1 row
+  gtk_grid_attach (GTK_GRID (grid), coupling_scale, 2, 2, 1, 1); /* Position (2,2) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), coupling_label, 3, 2, 1, 1); /* Position (3,2) spanning 1 col and 1 row */
 
   /* Pixel buffer @ start up and default canvas display */
   pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
   image_lattice = gtk_image_new_from_pixbuf (pixbuf);
   paint_a_background (image_lattice);
-  gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 3, 5, 1); // position (0,1) spanning 5 col and 1 row)
+  gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 3, 5, 1); /* Position (0,3) spanning 5 col and 1 row */
 
   /* ----------------------------  INIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Initialize");
   g_signal_connect (button, "clicked", G_CALLBACK (init_lattice), GTK_IMAGE (image_lattice));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, 4, 1, 1); // position (0,3) spanning 1 col and 1 row)
+  gtk_grid_attach (GTK_GRID (grid), button, 0, 4, 1, 1); /* Position (0,4) spanning 1 col and 1 row */
   /* ----------------------------  START BUTTON  ---------------------------- */
   button = gtk_button_new_with_label ("Start");
   g_signal_connect (button, "clicked", G_CALLBACK (start_simulation), GTK_IMAGE (image_lattice));
-  gtk_grid_attach (GTK_GRID(grid), button, 1, 4, 1, 1); // position (1,3) spanning 1 col and 1 row)
+  gtk_grid_attach (GTK_GRID(grid), button, 1, 4, 1, 1); /* Position (1,4) spanning 1 col and 1 row */
   /* ----------------------------  STOP BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Stop");
   g_signal_connect (button, "clicked", G_CALLBACK(stop_simulation), NULL);
-  gtk_grid_attach (GTK_GRID(grid), button, 2, 4, 1, 1); // position (2,3) spanning 1 col and 1 row)
+  gtk_grid_attach (GTK_GRID(grid), button, 2, 4, 1, 1); /* Position (2,4) spanning 1 col and 1 row */
   /* ----------------------------  QUIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Quit");
   g_signal_connect_swapped (button, "clicked", G_CALLBACK (gtk_widget_destroy), window);
-  gtk_grid_attach (GTK_GRID (grid), button, 4, 4, 1, 1); // position (4,3) spanning 1 col and 1 row)
+  gtk_grid_attach (GTK_GRID (grid), button, 4, 4, 1, 1); /* Position (4,4) spanning 1 col and 1 row */
 
   // Show the window and all widgets
   gtk_widget_show_all (window);
