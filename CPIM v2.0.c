@@ -20,19 +20,20 @@
 struct simulation
   {
   int lattice_configuration[X_SIZE][Y_SIZE]; /* Store latice configuration */
-gint run;                   /* Time handler tag */
-gboolean running;           /* Are we running? */
-gboolean initialized;       /* Have we been initialized? */
-int generation_time;        /* Generations simulated */
-int influence_radius;       /* Distance (in sites) of Ising-like interactions */
-double occupancy;           /* Lattice occupancy */
-double up;                  /* Keeps track of spins in the up (+1) state */
-double down;                /* Keeps track of spins in the down (-1) state */
-double birth_rate;          /* Contact Process' birth rate */
-double death_rate;          /* Contact Process' death rate */
-double temperature;         /* Ising model's temperature (T) */
-double coupling;            /* Ising model's coupling (J) parameter */
-} s;                        /* Instance s of struct */
+  gint run;                   /* Time handler tag */
+  gboolean running;           /* Are we running? */
+  gboolean initialized;       /* Have we been initialized? */
+  int generation_time;        /* Generations simulated */
+  int influence_radius;       /* Distance (in sites) of Ising-like interactions */
+  double occupancy;           /* Lattice occupancy */
+  double up;                  /* Keeps track of spins in the up (+1) state */
+  double down;                /* Keeps track of spins in the down (-1) state */
+  double birth_rate;          /* Contact Process' birth rate */
+  double death_rate;          /* Contact Process' death rate */
+  double temperature;         /* Ising model's temperature (T) */
+  double coupling;            /* Ising model's coupling (J) parameter */
+  double magnetic_field;      /* Ising model's magnetic field (B) */
+  } s;                        /* Instance s of struct */
 
 
 /* Declare put_pixel function to access individual pixel data on a pixel buffer.
@@ -107,7 +108,8 @@ void get_closest_neighbors(int x, int y, int r, int* neighbors)
     for (int j = -r; j <= r; j++) 
       {
       if (i == 0 && j == 0) {continue;}
-      neighbors[n++] = s.lattice_configuration[(int) (X_SIZE + x + i) % X_SIZE][(int) (Y_SIZE + y + j) % Y_SIZE];
+      neighbors[n++] = s.lattice_configuration[(int) (X_SIZE + x + i) % X_SIZE]
+                                              [(int) (Y_SIZE + y + j) % Y_SIZE];
       }
     }
   }
@@ -130,7 +132,7 @@ double compute_energy (int x, int y)
     {
     neighborhood_configuration += neighborhood[n];
     }
-  energy = s.coupling * spin * neighborhood_configuration;
+  energy = spin*(s.coupling * neighborhood_configuration - s.magnetic_field);
   return energy;
   }
 
@@ -364,6 +366,18 @@ static void coupling_scale_moved (GtkRange *range, gpointer user_data)
   }
 
 
+/*  Callback to respond Gtk scale slide move event */
+static void magnetic_field_scale_moved (GtkRange *range, gpointer user_data)
+  {
+  GtkWidget *label = user_data;
+  gdouble pos = gtk_range_get_value (range);
+  s.magnetic_field = (float) pos;
+  gchar *str = g_strdup_printf ("magnetic field = %.2f", pos);
+  gtk_label_set_text (GTK_LABEL (label), str);
+  g_free (str);
+  }
+
+
 /* Activate function with all widget creation and initialization. Ideally this
 should be handled by a GtkBuilder object */
 static void activate (GtkApplication *app, gpointer user_data)
@@ -378,6 +392,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   GtkWidget *death_rate_scale, *death_rate_label;
   GtkWidget *temperature_scale, *temperature_label;
   GtkWidget *coupling_scale, *coupling_label;
+  GtkWidget *magnetic_field_scale, *magnetic_field_label;
 
   /* Initialize Mersenne Twister algorithm for random number genration */
   unsigned int seed = (unsigned int) time (NULL);
@@ -389,6 +404,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   s.death_rate = 0.00;
   s.temperature = 0.001;
   s.coupling = -1.00;
+  s.magnetic_field = 0.00;
 
   /* Set simulation flags */
   s.running = FALSE;
@@ -414,6 +430,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   /* Birth rate scale slide bar */
   birth_rate_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
   birth_rate_label = gtk_label_new ("beta");
+  gtk_range_set_value (GTK_RANGE (birth_rate_scale), 1.0);
   g_signal_connect (birth_rate_scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), birth_rate_label);
   gtk_grid_attach (GTK_GRID (grid), birth_rate_scale, 0, 1, 1, 1); /* Position (0,1) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), birth_rate_label, 1, 1, 1, 1); /* Position (1,1) spanning 1 col and 1 row */
@@ -439,28 +456,37 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), coupling_scale, 2, 2, 1, 1); /* Position (2,2) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), coupling_label, 3, 2, 1, 1); /* Position (3,2) spanning 1 col and 1 row */
 
+  /* Magnetic field (B) scale slide bar */
+  magnetic_field_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, -1.0, 1.0, 0.01);
+  magnetic_field_label = gtk_label_new ("magnetic field"); //LABEL to be shown J
+  gtk_range_set_value (GTK_RANGE (magnetic_field_scale), 0.0);
+  g_signal_connect (magnetic_field_scale, "value-changed", G_CALLBACK (magnetic_field_scale_moved), magnetic_field_label);
+  gtk_grid_attach (GTK_GRID (grid), magnetic_field_scale, 0, 3, 1, 1); /* Position (2,3) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), magnetic_field_label, 1, 3, 1, 1); /* Position (3,3) spanning 1 col and 1 row */
+  
+
   /* Pixel buffer @ start up and default canvas display */
   pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
   image_lattice = gtk_image_new_from_pixbuf (pixbuf);
   paint_a_background (image_lattice);
-  gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 3, 5, 1); /* Position (0,3) spanning 5 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 4, 5, 1); /* Position (0,3) spanning 5 col and 1 row */
 
   /* ----------------------------  INIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Initialize");
   g_signal_connect (button, "clicked", G_CALLBACK (init_lattice), GTK_IMAGE (image_lattice));
-  gtk_grid_attach (GTK_GRID (grid), button, 0, 4, 1, 1); /* Position (0,4) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), button, 0, 5, 1, 1); /* Position (0,4) spanning 1 col and 1 row */
   /* ----------------------------  START BUTTON  ---------------------------- */
   button = gtk_button_new_with_label ("Start");
   g_signal_connect (button, "clicked", G_CALLBACK (start_simulation), GTK_IMAGE (image_lattice));
-  gtk_grid_attach (GTK_GRID(grid), button, 1, 4, 1, 1); /* Position (1,4) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID(grid), button, 1, 5, 1, 1); /* Position (1,4) spanning 1 col and 1 row */
   /* ----------------------------  STOP BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Stop");
   g_signal_connect (button, "clicked", G_CALLBACK(stop_simulation), NULL);
-  gtk_grid_attach (GTK_GRID(grid), button, 2, 4, 1, 1); /* Position (2,4) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID(grid), button, 2, 5, 1, 1); /* Position (2,4) spanning 1 col and 1 row */
   /* ----------------------------  QUIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Quit");
   g_signal_connect_swapped (button, "clicked", G_CALLBACK (gtk_widget_destroy), window);
-  gtk_grid_attach (GTK_GRID (grid), button, 4, 4, 1, 1); /* Position (4,4) spanning 1 col and 1 row */
+  gtk_grid_attach (GTK_GRID (grid), button, 4, 5, 1, 1); /* Position (4,4) spanning 1 col and 1 row */
 
   // Show the window and all widgets
   gtk_widget_show_all (window);
