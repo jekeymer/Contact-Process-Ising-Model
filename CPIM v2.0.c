@@ -24,22 +24,46 @@ struct simulation
   gboolean running;           /* Are we running? */
   gboolean initialized;       /* Have we been initialized? */
   int generation_time;        /* Generations simulated */
-  int influence_radius;       /* Distance (in sites) of Ising-like interactions */
+  int influence_radius;       /* Distance (in number of sites) of Ising-like 
+                                 interactions */
   double occupancy;           /* Lattice occupancy */
   double up;                  /* Keeps track of spins in the up (+1) state */
   double down;                /* Keeps track of spins in the down (-1) state */
   double birth_rate;          /* Contact Process' birth rate */
   double death_rate;          /* Contact Process' death rate */
+  double differentiation_rate;/* Rate at which occupied sites get a 
+                                 differentiated state */
   double temperature;         /* Ising model's temperature (T) */
   double coupling;            /* Ising model's coupling (J) parameter */
   double magnetic_field;      /* Ising model's magnetic field (B) */
   } s;                        /* Instance s of struct */
 
 
-/* Declare put_pixel function to access individual pixel data on a pixel buffer.
-   Implemented at the end of document. */
+static void stop_simulation (gpointer data)
+  {
+  if (s.running)
+    {
+    g_source_remove (s.run);
+    s.running = FALSE;
+    g_print ("Simulation stopped\n");
+    }
+  }
+
+
+/* Implementation of put pixel function. Code retrieved from:
+   https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-The-GdkPixbuf-Structure.html */
 void put_pixel (GdkPixbuf *pixbuf, int x, int y,
-                guchar red, guchar green, guchar blue, guchar alpha);
+                guchar red, guchar green, guchar blue, guchar alpha)
+  {
+  guchar *pixels, *p;
+  int rowstride, numchannels;
+  numchannels = gdk_pixbuf_get_n_channels(pixbuf);
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  pixels = gdk_pixbuf_get_pixels(pixbuf);
+  p = pixels + y * rowstride + x * numchannels;
+  p[0] = red;	p[1] = green; p[2] = blue; p[3] = alpha;
+  return;
+  }
 
 
 /* Function that creates a new pixel buffer and paints an image to display as
@@ -82,6 +106,10 @@ static void paint_lattice (gpointer data)
           put_pixel (p, (int) x, (int) y, 
                      (guchar) 255, (guchar) 255, (guchar) 255, 255);
           break;
+        // case 2:	/* Occupied, un-differentiated site. Paint black */
+        //   put_pixel (p, (int) x, (int) y, 
+        //              (guchar) 48, (guchar) 48, (guchar) 48, 255);
+        //   break;
         case 1:	/* Occupied, +1 site. Paint red */
           put_pixel (p, (int) x, (int) y, 
                      (guchar) 249, (guchar) 237, (guchar) 105, 255);
@@ -130,6 +158,8 @@ double compute_energy (int x, int y)
   
   for (int n = 0; n < num_neighbors; n++) 
     {
+    // /* If neighbor has no spin, go to the next one */
+    // if (neighborhood[n] == 2) {continue;} 
     neighborhood_configuration += neighborhood[n];
     }
   energy = spin*(s.coupling * neighborhood_configuration - s.magnetic_field);
@@ -143,7 +173,7 @@ int update_lattice (gpointer data)
   {
   // int random_neighbor;
   int random_neighbor_state;
-  int random_spin_value;
+  // int random_spin;
   double spin_energy, spin_energy_diff;
   double transition_probability;
   int random_x_coor, random_y_coor;
@@ -165,11 +195,19 @@ int update_lattice (gpointer data)
                                contact_process_radius, neighbors);
         random_neighbor_state = neighbors[(int) floor (genrand64_real3 () 
                                           * (num_neighbors))];
+        /* This is a simple occupancy check to avoid keep running the simulation
+           when there's no particle left on the lattice */
+        if (s.occupancy == 0) {stop_simulation (data);}
         /* If its random neighbor is occupied: put a copy at the focal site 
            with probability brith_rate * dt */
         if (genrand64_real2 () < s.birth_rate)
           {
-          if (random_neighbor_state == 1)
+          if (random_neighbor_state == 2)
+            {
+            s.lattice_configuration[random_x_coor][random_y_coor] = 2;
+            s.occupancy ++; 
+            }
+          else if (random_neighbor_state == 1)
             {
             s.lattice_configuration[random_x_coor][random_y_coor] = 1; 
             s.occupancy ++; 
@@ -183,6 +221,28 @@ int update_lattice (gpointer data)
             }
           }
         break; /* break case 0 */
+      // case 2: /* Focal point is in the occupied, undifferentiated state */
+      //   if (genrand64_real2 () < s.death_rate)
+      //     {
+      //     s.lattice_configuration[random_x_coor][random_y_coor] = 0;
+      //     s.occupancy --;
+      //     }
+      //   else if (genrand64_real2 () < s.differentiation_rate)
+      //     {
+      //     /* Set an occupied site in the middle of the lattice */
+      //     random_spin = ((genrand64_int64 () % 2) * 2) - 2;
+      //     if (random_spin == 1)
+      //       {
+      //       s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
+      //       s.up ++;
+      //       }
+      //     else if (random_spin == -1)
+      //       {
+      //       s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
+      //       s.down ++;
+      //       }
+      //     }
+      //   break;
       case 1: /* Focal point is in the up (+1) state */
         if (genrand64_real2 () < s.death_rate)
           {
@@ -261,16 +321,20 @@ static void init_lattice (GtkWidget *widget, gpointer data)
   s.occupancy = 0.0;
   s.up = 0;
   s.down = 0;
+
+  // /* Set a site in the moddle of the lattice occupied (un-differntiated)  */
+  // s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = 2;
+
   /* Set an occupied site in the middle of the lattice */
-  random_spin = (int) floor (genrand64_real3() * 2);
-  if (random_spin == 0)
+  random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
+  if (random_spin == 1)
     {
-    s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = 1;
+    s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = random_spin;
     s.up ++;
     }
-  else if (random_spin == 1)
+  else if (random_spin == -1)
     {
-    s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = -1;
+    s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = random_spin;
     s.down ++;
     }
   s.occupancy ++;
@@ -283,7 +347,7 @@ static void init_lattice (GtkWidget *widget, gpointer data)
 
 
 /* Callback to start simulation */
-static void start_simulation (GtkWidget *button, gpointer data)
+static void on_button_start_simulation (GtkWidget *button, gpointer data)
   {
   if(!s.running && s.initialized)
     {
@@ -295,14 +359,9 @@ static void start_simulation (GtkWidget *button, gpointer data)
 
 
 /* Callback to stop simulation */
-static void stop_simulation (GtkWidget *button, gpointer data)
+static void on_button_stop_simulation (GtkWidget *button, gpointer data)
   {
-  if (s.running)
-    {
-    g_source_remove (s.run);
-    s.running = FALSE;
-    g_print ("Simulation Stopped\n");
-    }
+  stop_simulation (data);
   }
 
 
@@ -402,6 +461,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   s.influence_radius = 1;
   s.birth_rate = 1.00;
   s.death_rate = 0.00;
+  // s.differentiation_rate = 1.0;
   s.temperature = 0.001;
   s.coupling = -1.00;
   s.magnetic_field = 0.00;
@@ -477,11 +537,11 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), button, 0, 5, 1, 1); /* Position (0,4) spanning 1 col and 1 row */
   /* ----------------------------  START BUTTON  ---------------------------- */
   button = gtk_button_new_with_label ("Start");
-  g_signal_connect (button, "clicked", G_CALLBACK (start_simulation), GTK_IMAGE (image_lattice));
+  g_signal_connect (button, "clicked", G_CALLBACK (on_button_start_simulation), GTK_IMAGE (image_lattice));
   gtk_grid_attach (GTK_GRID(grid), button, 1, 5, 1, 1); /* Position (1,4) spanning 1 col and 1 row */
   /* ----------------------------  STOP BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Stop");
-  g_signal_connect (button, "clicked", G_CALLBACK(stop_simulation), NULL);
+  g_signal_connect (button, "clicked", G_CALLBACK (on_button_stop_simulation), NULL);
   gtk_grid_attach (GTK_GRID(grid), button, 2, 5, 1, 1); /* Position (2,4) spanning 1 col and 1 row */
   /* ----------------------------  QUIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Quit");
@@ -490,22 +550,6 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   // Show the window and all widgets
   gtk_widget_show_all (window);
-  }
-
-
-/* Implementation of put pixel function. Code retrieved from:
-   https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-The-GdkPixbuf-Structure.html */
-void put_pixel (GdkPixbuf *pixbuf, int x, int y,
-                guchar red, guchar green, guchar blue, guchar alpha)
-  {
-  guchar *pixels, *p;
-  int rowstride, numchannels;
-  numchannels = gdk_pixbuf_get_n_channels(pixbuf);
-  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
-  pixels = gdk_pixbuf_get_pixels(pixbuf);
-  p = pixels + y * rowstride + x * numchannels;
-  p[0] = red;	p[1] = green; p[2] = blue; p[3] = alpha;
-  return;
   }
 
 
