@@ -11,8 +11,8 @@
 
 
 /* Constants */
-#define X_SIZE 500
-#define Y_SIZE 500
+#define X_SIZE 200
+#define Y_SIZE 200
 
 
 /* Structure with the simulation data
@@ -136,6 +136,7 @@ void get_closest_neighbors(int x, int y, int r, int* neighbors)
     for (int j = -r; j <= r; j++) 
       {
       if (i == 0 && j == 0) {continue;}
+			else if (abs(i) + abs(j) > r) {continue;}
       neighbors[n++] = s.lattice_configuration[(int) (X_SIZE + x + i) % X_SIZE]
                                               [(int) (Y_SIZE + y + j) % Y_SIZE];
       }
@@ -149,7 +150,7 @@ double compute_energy (int x, int y)
   double energy;
   int spin;
   double neighborhood_configuration = 0;
-  int num_neighbors = 4*s.influence_radius*(s.influence_radius + 1);
+  int num_neighbors = pow(s.influence_radius, 2) + pow(s.influence_radius + 1, 2);
   int neighborhood[num_neighbors];
 
   spin = s.lattice_configuration[x][y];
@@ -179,7 +180,7 @@ int update_lattice (gpointer data)
   int random_x_coor, random_y_coor;
 
   int contact_process_radius = 1;
-  int num_neighbors = 4*contact_process_radius*(contact_process_radius + 1);
+  int num_neighbors = pow(contact_process_radius, 2) + pow(contact_process_radius + 1, 2);
   int neighbors[num_neighbors];
 
   for (int site = 0; site < (int) (Y_SIZE*X_SIZE); site++)
@@ -195,9 +196,7 @@ int update_lattice (gpointer data)
                                contact_process_radius, neighbors);
         random_neighbor_state = neighbors[(int) floor (genrand64_real3 () 
                                           * (num_neighbors))];
-        /* This is a simple occupancy check to avoid keep running the simulation
-           when there's no particle left on the lattice */
-        if (s.occupancy == 0) {stop_simulation (data);}
+
         /* If its random neighbor is occupied: put a copy at the focal site 
            with probability brith_rate * dt */
         if (genrand64_real2 () < s.birth_rate)
@@ -292,6 +291,9 @@ int update_lattice (gpointer data)
   g_print ("Gen: %d \t Occupancy: %f \t Up: %f \t Down: %f\n", 
            s.generation_time, s.occupancy/(X_SIZE*Y_SIZE), 
            s.up/s.occupancy, s.down/s.occupancy);
+  /* This is a simple occupancy check to avoid keep running the simulation
+    when there's no particle left on the lattice */
+  if (s.occupancy <= 0) {stop_simulation (data);}
   return 0;
   }
 
@@ -480,7 +482,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   /* Pack the grid into the window */
   gtk_container_add (GTK_CONTAINER (window), grid);
 
-   /* Vecinity scale slide bar */
+  /* Vecinity scale slide bar */
   influence_radius_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 3, 1);
   influence_radius_label = gtk_label_new ("radius");
   g_signal_connect (influence_radius_scale, "value-changed", G_CALLBACK (influence_radius_scale_moved),  influence_radius_label);
