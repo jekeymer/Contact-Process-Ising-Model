@@ -3,19 +3,18 @@
 
 #include <stdlib.h>
 #include <gtk/gtk.h> /* GUI, Gtk library */
-#include "mt64.h" /* Pseudo-random number generation MT library (64 bit) */
-#include <math.h> /* Math to transform random n from continuous to discrete */
-#include <time.h> /* Used to seed pseudo-random number generator */
+#include "mt64.h"    /* Pseudo-random number generation MT library (64 bit) */
+#include <math.h>    /* Math to transform random n from continuous to discrete */
+#include <time.h>    /* Used to seed pseudo-random number generator */
 #include <stdio.h>
 
 
-/* Constants */
+/* Lattice Size */
 #define X_SIZE 256
 #define Y_SIZE 256
 
 
-/* Structure with the simulation data
-   i.e. a class-like object that allow us to keep track of data */
+/* Structure with the simulation data */
 struct simulation
   {
   int lattice_configuration[X_SIZE][Y_SIZE]; /* Store latice configuration */
@@ -65,8 +64,7 @@ void put_pixel (GdkPixbuf *pixbuf, int x, int y,
   }
 
 
-/* Function that creates a new pixel buffer and paints an image to display as
-   default canvas */
+/* Creates a pixel buffer and paints an image to display as default canvas */
 static void paint_a_background (gpointer data)
   {
   GdkPixbuf *p;
@@ -169,8 +167,7 @@ double compute_energy (int x, int y)
 
 
 
-/* Update function which simulates the stochastic process and updates the
-   configuration of the lattice */
+/* Update function   */
 int update_lattice (gpointer data)
   {
   // int random_neighbor;
@@ -292,6 +289,7 @@ int update_lattice (gpointer data)
   g_print ("Gen: %d \t Occupancy: %f \t Up: %f \t Down: %f\n", 
            s.generation_time, s.occupancy/(X_SIZE*Y_SIZE), 
            s.up/s.occupancy, s.down/s.occupancy);
+
   /* This is a simple occupancy check to avoid keep running the simulation
     when there's no particle left on the lattice */
   if (s.occupancy <= 0) {stop_simulation (data);}
@@ -308,7 +306,7 @@ gboolean time_handler (gpointer data)
   }
 
 
-/* Callback to initialize the lattice button click */
+/* Callback to initialize lattice*/
 static void init_lattice (GtkWidget *widget, gpointer data)
   {
   int random_spin;
@@ -364,7 +362,7 @@ static void show_about(GtkWidget *widget, gpointer data)
         gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
      "The Contact Process Ising Model (CPIM).");
      gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(dialog),
-     "https://github.com/jekeymer/Contact-Process-Ising-Model/wiki");
+     "https://github.com/jekeymer/Contact-Process-Ising-Model/wiki/The-Contact-Process-Ising-Model");
         gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
         g_object_unref(pixbuf), pixbuf = NULL;
         gtk_dialog_run(GTK_DIALOG (dialog));
