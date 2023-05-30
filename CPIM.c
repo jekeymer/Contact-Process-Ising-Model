@@ -1,7 +1,6 @@
-/* Should write a description of what this code does */
+// C code to expand the Contact Process code to incorporat 
+// a basic Ising Model in a Fair fashion
 
-/* Libraries */
-//#include <windows.h>
 #include <stdlib.h>
 #include <gtk/gtk.h> /* GUI, Gtk library */
 #include "mt64.h" /* Pseudo-random number generation MT library (64 bit) */
@@ -11,8 +10,8 @@
 
 
 /* Constants */
-#define X_SIZE 200
-#define Y_SIZE 200
+#define X_SIZE 256
+#define Y_SIZE 256
 
 
 /* Structure with the simulation data
@@ -521,7 +520,7 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   /* Birth rate scale slide bar */
   birth_rate_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
-  birth_rate_label = gtk_label_new ("beta");
+  birth_rate_label = gtk_label_new ("b");
   gtk_range_set_value (GTK_RANGE (birth_rate_scale), 1.0);
   g_signal_connect (birth_rate_scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), birth_rate_label);
   gtk_grid_attach (GTK_GRID (grid), birth_rate_scale, 0, 1, 1, 1); /* Position (0,1) spanning 1 col and 1 row */
@@ -529,32 +528,32 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   /* Death rate scale slide bar */
   death_rate_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
-  death_rate_label = gtk_label_new ("delta"); //LABEL to be shown J
+  death_rate_label = gtk_label_new ("d"); //LABEL to be shown J
   g_signal_connect (death_rate_scale, "value-changed", G_CALLBACK (death_rate_scale_moved), death_rate_label);
   gtk_grid_attach (GTK_GRID (grid), death_rate_scale, 2, 1, 1, 1); /* Position (2,1) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), death_rate_label, 3, 1, 1, 1); /* Position (3,1) spanning 1 col and 1 row */
 
   /* Temperature (T) scale slide bar */
   temperature_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.001, 50, 0.001);
-  temperature_label = gtk_label_new ("temperature"); //LABEL to be shown T
+  temperature_label = gtk_label_new ("T"); //LABEL to be shown T
   g_signal_connect (temperature_scale, "value-changed", G_CALLBACK (temperature_scale_moved), temperature_label);
   gtk_grid_attach (GTK_GRID (grid), temperature_scale, 0, 2, 1, 1); /* Position (0,2) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), temperature_label, 1, 2, 1, 1); /* Position (1,2) spanning 1 col and 1 row */
 
   /* Coupling (J) scale slide bar */
   coupling_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, -1.0, 1.0, 0.01);
-  coupling_label = gtk_label_new ("coupling"); //LABEL to be shown J
+  coupling_label = gtk_label_new ("J"); //LABEL to be shown J
   g_signal_connect (coupling_scale,"value-changed", G_CALLBACK (coupling_scale_moved), coupling_label);
   gtk_grid_attach (GTK_GRID (grid), coupling_scale, 2, 2, 1, 1); /* Position (2,2) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), coupling_label, 3, 2, 1, 1); /* Position (3,2) spanning 1 col and 1 row */
 
   /* Magnetic field (B) scale slide bar */
-  magnetic_field_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, -1.0, 1.0, 0.01);
-  magnetic_field_label = gtk_label_new ("magnetic field"); //LABEL to be shown J
-  gtk_range_set_value (GTK_RANGE (magnetic_field_scale), 0.0);
-  g_signal_connect (magnetic_field_scale, "value-changed", G_CALLBACK (magnetic_field_scale_moved), magnetic_field_label);
-  gtk_grid_attach (GTK_GRID (grid), magnetic_field_scale, 0, 3, 1, 1); /* Position (2,3) spanning 1 col and 1 row */
-  gtk_grid_attach (GTK_GRID (grid), magnetic_field_label, 1, 3, 1, 1); /* Position (3,3) spanning 1 col and 1 row */
+ // magnetic_field_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, -1.0, 1.0, 0.01);
+ // magnetic_field_label = gtk_label_new ("magnetic field"); //LABEL to be shown J
+ // gtk_range_set_value (GTK_RANGE (magnetic_field_scale), 0.0);
+ // g_signal_connect (magnetic_field_scale, "value-changed", G_CALLBACK (magnetic_field_scale_moved), magnetic_field_label);
+ // gtk_grid_attach (GTK_GRID (grid), magnetic_field_scale, 0, 3, 1, 1); /* Position (2,3) spanning 1 col and 1 row */
+ // gtk_grid_attach (GTK_GRID (grid), magnetic_field_label, 1, 3, 1, 1); /* Position (3,3) spanning 1 col and 1 row */
   
 
   /* Pixel buffer @ start up and default canvas display */
@@ -564,7 +563,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 4, 5, 1); /* Position (0,3) spanning 5 col and 1 row */
 
   /* ----------------------------  INIT BUTTON  ----------------------------- */
-  button = gtk_button_new_with_label ("Initialize");
+  button = gtk_button_new_with_label ("Init");
   g_signal_connect (button, "clicked", G_CALLBACK (init_lattice), GTK_IMAGE (image_lattice));
   gtk_grid_attach (GTK_GRID (grid), button, 0, 5, 1, 1); /* Position (0,4) spanning 1 col and 1 row */
   /* ----------------------------  START BUTTON  ---------------------------- */
