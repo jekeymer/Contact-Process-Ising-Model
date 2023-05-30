@@ -363,7 +363,7 @@ static void show_about(GtkWidget *widget, gpointer data)
         gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), "version 0.1, 2023");
         gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(dialog),"Open Source Code");
         gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
-     "The Contact process Ising model.");
+     "The Contact Process Ising Model (CPIM).");
      gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(dialog),
      "https://github.com/jekeymer/Contact-Process-Ising-Model/wiki");
         gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
