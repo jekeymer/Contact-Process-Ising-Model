@@ -168,6 +168,8 @@ double compute_energy (int x, int y)
   }
 
 
+
+
 /* Update function which simulates the stochastic process and updates the
    configuration of the lattice */
 int update_lattice (gpointer data)
@@ -327,6 +329,8 @@ static void init_lattice (GtkWidget *widget, gpointer data)
   // /* Set a site in the moddle of the lattice occupied (un-differntiated)  */
   // s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = 2;
 
+
+
   /* Set an occupied site in the middle of the lattice */
   random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
   if (random_spin == 1)
@@ -346,6 +350,29 @@ static void init_lattice (GtkWidget *widget, gpointer data)
   paint_lattice (data);
   g_print ("Lattice initialized\n");
   }
+
+
+
+// HERE GOES THE ABOUT DIALOG BOX For info at a website: lab wiki on the contact process
+static void show_about(GtkWidget *widget, gpointer data)
+        {
+        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("kimero_LAB_transparent.tiff", NULL);
+        GtkWidget *dialog = gtk_about_dialog_new();
+        gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(dialog),
+                                    "Contact Process Ising Model App");
+        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), "version 0.1, 2023");
+        gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(dialog),"Open Source Code");
+        gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
+     "The Contact process Ising model.");
+     gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(dialog),
+     "https://github.com/jekeymer/Contact-Process-Ising-Model/wiki");
+        gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
+        g_object_unref(pixbuf), pixbuf = NULL;
+        gtk_dialog_run(GTK_DIALOG (dialog));
+        gtk_widget_destroy(dialog);
+        }
+
+
 
 
 /* Callback to start simulation */
@@ -437,6 +464,9 @@ static void magnetic_field_scale_moved (GtkRange *range, gpointer user_data)
   gtk_label_set_text (GTK_LABEL (label), str);
   g_free (str);
   }
+
+
+
 
 
 /* Activate function with all widget creation and initialization. Ideally this
@@ -545,6 +575,12 @@ static void activate (GtkApplication *app, gpointer user_data)
   button = gtk_button_new_with_label ("Stop");
   g_signal_connect (button, "clicked", G_CALLBACK (on_button_stop_simulation), NULL);
   gtk_grid_attach (GTK_GRID(grid), button, 2, 5, 1, 1); /* Position (2,4) spanning 1 col and 1 row */
+
+// -----   ABOUT ? BUTTON  ----
+	button = gtk_button_new_with_label ("?");
+	g_signal_connect (button, "clicked", G_CALLBACK(show_about), GTK_WINDOW(window));
+	gtk_grid_attach (GTK_GRID (grid), button, 3, 5, 1, 1); // position (3,3) spanning 1 col and 1 raw
+
   /* ----------------------------  QUIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Quit");
   g_signal_connect_swapped (button, "clicked", G_CALLBACK (gtk_widget_destroy), window);
