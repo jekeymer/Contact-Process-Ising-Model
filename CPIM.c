@@ -8,7 +8,6 @@
 #include <time.h>    /* Used to seed pseudo-random number generator */
 #include <stdio.h>
 
-
 /* Lattice Size */
 #define X_SIZE 256
 #define Y_SIZE 256
@@ -35,6 +34,7 @@ struct simulation
   double coupling;            /* Ising model's coupling (J) parameter */
   double magnetic_field;      /* Ising model's magnetic field (B) */
   } s;                        /* Instance s of struct */
+
 
 
 static void stop_simulation (gpointer data)
@@ -84,8 +84,8 @@ static void paint_a_background (gpointer data)
   }
 
 
-/* Function that paints the pixel buffer with the simulation data
-   */
+
+/* Function that paints the pixel buffer with the simulation data   */
 static void paint_lattice (gpointer data)
   {
   GdkPixbuf *p;
@@ -350,7 +350,7 @@ static void init_lattice (GtkWidget *widget, gpointer data)
 
 
 
-// HERE GOES THE ABOUT DIALOG BOX For info at a website: lab wiki on the contact process
+// Callback to launch dialog with the info at a github's wiki
 static void show_about(GtkWidget *widget, gpointer data)
         {
         GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("kimero_LAB_transparent.tiff", NULL);
@@ -464,13 +464,10 @@ static void magnetic_field_scale_moved (GtkRange *range, gpointer user_data)
 
 
 
-
-
-/* Activate function with all widget creation and initialization. Ideally this
-should be handled by a GtkBuilder object */
+/* Activate function */
 static void activate (GtkApplication *app, gpointer user_data)
   {
-  /* Declare a bunch of Gtk widgets for the GUI */
+  /* Declare Gtk widgets for the GUI */
   GtkWidget *window, *grid, *button, *image_lattice;
   GdkPixbuf *pixbuf;
 
@@ -498,6 +495,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   /* Set simulation flags */
   s.running = FALSE;
   s.initialized = FALSE;
+
 
   /* Create a new window, and set its title */
   window = gtk_application_window_new (app);
@@ -559,6 +557,11 @@ static void activate (GtkApplication *app, gpointer user_data)
   image_lattice = gtk_image_new_from_pixbuf (pixbuf);
   paint_a_background (image_lattice);
   gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 4, 5, 1); /* Position (0,3) spanning 5 col and 1 row */
+
+
+
+
+
 
   /* ----------------------------  INIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Init");
