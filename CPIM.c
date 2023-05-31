@@ -37,6 +37,11 @@ struct simulation
 
 
 
+
+
+
+
+
 static void stop_simulation (gpointer data)
   {
   if (s.running)
@@ -85,6 +90,8 @@ static void paint_a_background (gpointer data)
 
 
 
+
+
 /* Function that paints the pixel buffer with the simulation data   */
 static void paint_lattice (gpointer data)
   {
@@ -123,6 +130,9 @@ static void paint_lattice (gpointer data)
   }
 
 
+
+
+
 /* Function to get the closest neighbors (separated by r sites) of a given site 
    in the lattice */
 void get_closest_neighbors(int x, int y, int r, int* neighbors)
@@ -139,6 +149,9 @@ void get_closest_neighbors(int x, int y, int r, int* neighbors)
       }
     }
   }
+
+
+
 
 
 /* Function used to compute the energy value of the site located at (x, y) */
@@ -163,6 +176,8 @@ double compute_energy (int x, int y)
   energy = spin*(s.coupling * neighborhood_configuration - s.magnetic_field);
   return energy;
   }
+
+
 
 
 
@@ -297,8 +312,9 @@ int update_lattice (gpointer data)
   }
 
 
-/* Time handler that connects the update function to the gtk loop for its
-   scomputation */
+
+
+/* Time handler to connect update function to the gtk loop */
 gboolean time_handler (gpointer data)
   {
   update_lattice (data);
@@ -350,25 +366,24 @@ static void init_lattice (GtkWidget *widget, gpointer data)
 
 
 
-// Callback to launch dialog with the info at a github's wiki
+/* Callback to launch dialog with info (github's wiki) */
 static void show_about(GtkWidget *widget, gpointer data)
-        {
-        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("kimero_LAB_transparent.tiff", NULL);
-        GtkWidget *dialog = gtk_about_dialog_new();
-        gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(dialog),
+  {
+   GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("kimero_LAB_transparent.tiff", NULL);
+   GtkWidget *dialog = gtk_about_dialog_new();
+   gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(dialog),
                                     "Contact Process Ising Model App");
-        gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), "version 0.1, 2023");
-        gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(dialog),"Open Source Code");
-        gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
+   gtk_about_dialog_set_version(GTK_ABOUT_DIALOG(dialog), "version 0.1, 2023");
+   gtk_about_dialog_set_copyright(GTK_ABOUT_DIALOG(dialog),"Open Source Code");
+   gtk_about_dialog_set_comments(GTK_ABOUT_DIALOG(dialog),
      "The Contact Process Ising Model (CPIM).");
-     gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(dialog),
+   gtk_about_dialog_set_website(GTK_ABOUT_DIALOG(dialog),
      "https://github.com/jekeymer/Contact-Process-Ising-Model/wiki/The-Contact-Process-Ising-Model");
-        gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
-        g_object_unref(pixbuf), pixbuf = NULL;
-        gtk_dialog_run(GTK_DIALOG (dialog));
-        gtk_widget_destroy(dialog);
-        }
-
+   gtk_about_dialog_set_logo(GTK_ABOUT_DIALOG(dialog), pixbuf);
+   g_object_unref(pixbuf), pixbuf = NULL;
+   gtk_dialog_run(GTK_DIALOG (dialog));
+   gtk_widget_destroy(dialog);
+  }
 
 
 
@@ -467,17 +482,18 @@ static void magnetic_field_scale_moved (GtkRange *range, gpointer user_data)
 /* Activate function */
 static void activate (GtkApplication *app, gpointer user_data)
   {
-  /* Declare Gtk widgets for the GUI */
+  /* Gtk widgets */
   GtkWidget *window, *grid, *button, *image_lattice;
   GdkPixbuf *pixbuf;
 
-  /* To control parameters of the process */
+  /* Control parameters */
   GtkWidget *influence_radius_scale, *influence_radius_label;
   GtkWidget *birth_rate_scale, *birth_rate_label;
   GtkWidget *death_rate_scale, *death_rate_label;
   GtkWidget *temperature_scale, *temperature_label;
   GtkWidget *coupling_scale, *coupling_label;
   GtkWidget *magnetic_field_scale, *magnetic_field_label;
+
 
   /* Initialize Mersenne Twister algorithm for random number genration */
   unsigned int seed = (unsigned int) time (NULL);
@@ -502,15 +518,19 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_window_set_title (GTK_WINDOW (window), "Contact Process Ising Model");
   gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 
-  /* Here we make a grid that is going pack our widgets */
+  /* Use Gtk grid to pack our widgets */
   grid = gtk_grid_new ();
   /* Pack the grid into the window */
   gtk_container_add (GTK_CONTAINER (window), grid);
+
+
+
 
   /* Vecinity scale slide bar */
   influence_radius_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 3, 1);
   influence_radius_label = gtk_label_new ("radius");
   g_signal_connect (influence_radius_scale, "value-changed", G_CALLBACK (influence_radius_scale_moved),  influence_radius_label);
+
   gtk_grid_attach (GTK_GRID (grid), influence_radius_scale, 0, 0, 1, 1); /* Position (0,0) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid),  influence_radius_label, 1, 0, 1, 1); /* Position (1,0) spanning 1 col and 1 row */
 
@@ -519,26 +539,29 @@ static void activate (GtkApplication *app, gpointer user_data)
   birth_rate_label = gtk_label_new ("b");
   gtk_range_set_value (GTK_RANGE (birth_rate_scale), 1.0);
   g_signal_connect (birth_rate_scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), birth_rate_label);
+
   gtk_grid_attach (GTK_GRID (grid), birth_rate_scale, 0, 1, 1, 1); /* Position (0,1) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), birth_rate_label, 1, 1, 1, 1); /* Position (1,1) spanning 1 col and 1 row */
 
   /* Death rate scale slide bar */
   death_rate_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.0, 1.0, 0.01);
-  death_rate_label = gtk_label_new ("d"); //LABEL to be shown J
+  death_rate_label = gtk_label_new ("d"); 
   g_signal_connect (death_rate_scale, "value-changed", G_CALLBACK (death_rate_scale_moved), death_rate_label);
+
   gtk_grid_attach (GTK_GRID (grid), death_rate_scale, 2, 1, 1, 1); /* Position (2,1) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), death_rate_label, 3, 1, 1, 1); /* Position (3,1) spanning 1 col and 1 row */
 
   /* Temperature (T) scale slide bar */
   temperature_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 0.001, 50, 0.001);
-  temperature_label = gtk_label_new ("T"); //LABEL to be shown T
+  temperature_label = gtk_label_new ("T"); 
   g_signal_connect (temperature_scale, "value-changed", G_CALLBACK (temperature_scale_moved), temperature_label);
+
   gtk_grid_attach (GTK_GRID (grid), temperature_scale, 0, 2, 1, 1); /* Position (0,2) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), temperature_label, 1, 2, 1, 1); /* Position (1,2) spanning 1 col and 1 row */
 
   /* Coupling (J) scale slide bar */
   coupling_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, -1.0, 1.0, 0.01);
-  coupling_label = gtk_label_new ("J"); //LABEL to be shown J
+  coupling_label = gtk_label_new ("J"); 
   g_signal_connect (coupling_scale,"value-changed", G_CALLBACK (coupling_scale_moved), coupling_label);
   gtk_grid_attach (GTK_GRID (grid), coupling_scale, 2, 2, 1, 1); /* Position (2,2) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), coupling_label, 3, 2, 1, 1); /* Position (3,2) spanning 1 col and 1 row */
@@ -563,6 +586,8 @@ static void activate (GtkApplication *app, gpointer user_data)
 
 
 
+
+
   /* ----------------------------  INIT BUTTON  ----------------------------- */
   button = gtk_button_new_with_label ("Init");
   g_signal_connect (button, "clicked", G_CALLBACK (init_lattice), GTK_IMAGE (image_lattice));
@@ -576,7 +601,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   g_signal_connect (button, "clicked", G_CALLBACK (on_button_stop_simulation), NULL);
   gtk_grid_attach (GTK_GRID(grid), button, 2, 5, 1, 1); /* Position (2,4) spanning 1 col and 1 row */
 
-// -----   ABOUT ? BUTTON  ----
+/* ----------------------------  ABOUT BUTTON ---------------------------- */
 	button = gtk_button_new_with_label ("?");
 	g_signal_connect (button, "clicked", G_CALLBACK(show_about), GTK_WINDOW(window));
 	gtk_grid_attach (GTK_GRID (grid), button, 3, 5, 1, 1); // position (3,3) spanning 1 col and 1 raw
@@ -586,7 +611,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   g_signal_connect_swapped (button, "clicked", G_CALLBACK (gtk_widget_destroy), window);
   gtk_grid_attach (GTK_GRID (grid), button, 4, 5, 1, 1); /* Position (4,4) spanning 1 col and 1 row */
 
-  // Show the window and all widgets
+  /* Show the window and all widgets */
   gtk_widget_show_all (window);
   }
 
