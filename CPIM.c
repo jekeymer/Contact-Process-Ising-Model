@@ -524,8 +524,6 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (window), grid);
 
 
-
-
   /* Vecinity scale slide bar */
   influence_radius_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, 1, 3, 1);
   influence_radius_label = gtk_label_new ("radius");
@@ -565,6 +563,11 @@ static void activate (GtkApplication *app, gpointer user_data)
   g_signal_connect (coupling_scale,"value-changed", G_CALLBACK (coupling_scale_moved), coupling_label);
   gtk_grid_attach (GTK_GRID (grid), coupling_scale, 2, 2, 1, 1); /* Position (2,2) spanning 1 col and 1 row */
   gtk_grid_attach (GTK_GRID (grid), coupling_label, 3, 2, 1, 1); /* Position (3,2) spanning 1 col and 1 row */
+
+
+
+
+
 
 
 
@@ -609,7 +612,7 @@ static void activate (GtkApplication *app, gpointer user_data)
 
 
 
-/* Finbally we code the main function spanning a Gtk Application object */
+/* Main function spanning a Gtk Application object */
 int main (int argc, char **argv)
   {
   GtkApplication *app;
