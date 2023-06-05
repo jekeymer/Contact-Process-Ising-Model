@@ -140,16 +140,19 @@ void get_closest_neighbors(int x, int y, int r, int* neighbors)
 
 int energy_KS (int x, int y)
 	{
-  int J = s.J;
-	int E0;  // Energy of site at coordinate (x,y)
-  int Et;
+  //int J = s.J;
+	//int E0;  // Energy of site at coordinate (x,y)
+  int Energy; // it is integer as it is in kB*T units
 	int up = 0;   //R:: 2 = +1 = up = Red 
 	int down = 0;   // G::   3 = -2 = down = Green
 	if (s.Ising_neighboorhood == 1)  // Nearest Neighboorhood (NN) has 4 sites
     	{ // we map the states to spins
-      if (s.lattice_configuration[x][y] == 2){E0 = 1;} // 2 -> +1
-    	 else if (s.lattice_configuration[x][y] == 3){E0 =-1;} // 3 -> -1
-    	// we check the South (S) neighboor (#1)
+      // wich is no longer needed with new state convension
+      //E0 = s.lattice_configuration[x][y];
+      //if (s.lattice_configuration[x][y] == 2){E0 = 1;} // 2 -> +1
+    	//else if (s.lattice_configuration[x][y] == 3){E0 =-1;} // 3 -> -1
+    	// check this energy funcion IS NEVER called if state is not -1 or +1
+      // we check the South (S) neighboor (#1)
       if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 2){up++;}
     	 else if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
     	// we check the North (N) neighboor (#2)
@@ -164,9 +167,13 @@ int energy_KS (int x, int y)
     	}
     else if (s.Ising_neighboorhood == 2) //Next Nearest Neighboorhood (NNN) has 12 sites
         { // we map the states to spins
-        if (s.lattice_configuration[x][y] == 2){E0 = 1;} // 2 -> +1
-    	   else if (s.lattice_configuration[x][y] == 3){E0 =-1;} // 3 -> -1
-    	  // we check the South (S) neighboor (#1)
+        // which is the case for NN, here also is no longer needed
+        // with the new convencion on stetes
+        //E0 = s.lattice_configuration[x][y];
+        //if (s.lattice_configuration[x][y] == 2){E0 = 1;} // 2 -> +1
+    	  //else if (s.lattice_configuration[x][y] == 3){E0 =-1;} // 3 -> -1
+    	  // same check about calling this...
+        // we check the South (S) neighboor (#1)
         if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 2){up++;}
     	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
     	  // we check the North (N) neighboor (#2)
@@ -204,8 +211,11 @@ int energy_KS (int x, int y)
     	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
     	  }
         
-	Et = J*E0*(up-down);
-	return Et;
+	//Et = s.J*E0*(up-down);
+  // this function is only called if state is a spin state!
+  // i.e. s.lattice_configuration[x][y] = -1 OR + 1
+	Energy = s.J*s.lattice_configuration[x][y]*(up-down);
+  return Energy;
 	}
 
 /* Function used to compute the energy value of the site located at (x, y) */
@@ -237,17 +247,17 @@ double compute_energy (int x, int y)
 int update_lattice_KS(gpointer data)
 {
 	long random_number; 
-	double random_number1, random_number2;
-	int random_neighbor_state;
+	double total_reaction_rate , reaction_rate[2]; // Gillispie 
+	int reaction, random_neighbor_state;
 	long random_neighboor;
 	int x, y, E1, E2, dE1, dE2;
 	double B1, B2;
-	int sites = 0;
+	int sites = 0; // index for Monte Carlo visits to the Lattice
 	int random_x_coor, random_y_coor, random_x_coor2, random_y_coor2;
 	//double probabily_of_state = 0.1;
-	//double death_rate = 0.0001;
+	// visit the Lattice as many times as there are sites
 	for (sites; sites < (int)(Y_SIZE*X_SIZE); sites++)
-		{
+	 {
 		//pick a random focal site
 		random_x_coor = (int) floor(genrand64_real3()*X_SIZE); 
 		random_y_coor = (int) floor(genrand64_real3()*Y_SIZE);
@@ -294,27 +304,104 @@ int update_lattice_KS(gpointer data)
               // if a particle is present at the focal site, 
               // it can die with probability  dead_rate
               // HERE GILLISPIE should be used!!!
-				if (genrand64_real2() < s.death_rate)
-    				{
-    				s.lattice_configuration[random_x_coor][random_y_coor]= 0; s.occupancy --;
-    				}
-				else
-    				{
-    				if (genrand64_real1() < s.alpha_rate)
-        				{ // half chance for either spin
-        				random_number = (long) floor(genrand64_real3()*2);
-        				if (random_number == 0)
+        reaction_rate[0] = s.death_rate; // reaction 1 is death
+        reaction_rate[1] = s.alpha_rate; // reaction 2 is differenciation
+				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
+        // First we decide which reaction of the two might take place
+        if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+            {reaction = 1;} 
+              else {reaction = 2;};
+        switch(reaction)
+					      {
+                case 1: // differenciation does not happen, and
+                        // we now test if death happens
+                  if (genrand64_real2() < s.death_rate) 
+                    {
+                    s.lattice_configuration[random_x_coor][random_y_coor]= 0;
+                    s.vacancy ++; s.occupancy --; 
+                    } 
+                 break; 
+                case 2: // death does not happen, and
+                        // we now test if differenciation happens
+                  if (genrand64_real1() < s.alpha_rate)
+                    {
+                    // half chance for either spin
+        				    random_number = (long) floor(genrand64_real3()*2);
+        				    if (random_number == 0)
                 			{ // spin up
-            				s.lattice_configuration[random_x_coor][random_y_coor]= 1;
+            				  s.lattice_configuration[random_x_coor][random_y_coor]= 1;
+                      s.up++;
                       }
-            			else if (random_number == 1)
-                			{ // spin down 
-            				s.lattice_configuration[random_x_coor][random_y_coor]= -1;
-            				}
-        				}
-        			}	
-			  break;
-   }; /*
+            			    else if (random_number == 1)
+                			  { // spin down 
+            				    s.lattice_configuration[random_x_coor][random_y_coor]= -1;
+            				    s.down++;
+                        }
+                    } 
+                 break;
+                }
+        break;
+    	case -1: // if the site is occupied & it is in spin state (-1),
+        // HERE GILLISPIE should be used again!!!
+        reaction_rate[0] = s.death_rate; // reaction 1 is death
+        reaction_rate[1] = 1; // reaction 2 is spin flip: [-]==>[+] FOR NOW 1
+				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
+        // First we decide which reaction of the two might take place
+        if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+            {reaction = 1;} 
+              else {reaction = 2;}; 
+          switch(reaction)
+					      {
+                case 1: // spin flip ([-]==>[+]) does not happen, and
+                        // we now test if death happens
+                  if (genrand64_real2() < s.death_rate) 
+                    {
+                    s.lattice_configuration[random_x_coor][random_y_coor]= 0;
+                    s.vacancy ++; s.occupancy --; s.down--;
+                    } 
+                 break; 
+                case 2: // death does not happen, and
+                        // we now test if spin flip ([-]==>[+]) happens   
+                  // FOR NOW we filp si o si
+                  if (genrand64_real2() < 1) 
+                    {
+                    s.lattice_configuration[random_x_coor][random_y_coor]= 1;
+                    s.up++; s.down --;
+                    } 
+                 break; 
+                }
+        break;
+      case 1: // if the site is occupied & it is in spin state (+1)
+        // HERE GILLISPIE should be used again!!!
+        reaction_rate[0] = s.death_rate; // reaction 1 is death
+        reaction_rate[1] = 1; // reaction 2 is spin flip: [+]==>[-] FOR NOW 1
+				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
+        // First we decide which reaction of the two might take place
+        if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+            {reaction = 1;} 
+              else {reaction = 2;};
+          switch(reaction)
+					      {
+                case 1: // spin flip ([+]==>[-]) does not happen, and
+                        // we now test if death happens
+                  if (genrand64_real2() < s.death_rate) 
+                    {
+                    s.lattice_configuration[random_x_coor][random_y_coor]= 0;
+                    s.vacancy ++; s.occupancy --; s.up--;
+                    } 
+                 break; 
+                case 2: // death does not happen, and
+                        // we now test if spin flip ([+]==>[-]) happens 
+                  // FOR NOW we filp si o si
+                  if (genrand64_real2() < 1) 
+                    {
+                    s.lattice_configuration[random_x_coor][random_y_coor]= -1;
+                    s.up--; s.down ++;
+                    }  
+                 break; 
+                }    
+        break;	
+      }; /*
         int MC = 0;
         for (MC; MC < 100; MC++)
     		{
@@ -361,7 +448,7 @@ int update_lattice_KS(gpointer data)
       		}
   		}
       */
-  }
+   }
   s.generation_time ++;
   paint_lattice (data);
   g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
