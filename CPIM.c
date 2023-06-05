@@ -21,22 +21,22 @@ struct simulation
   gboolean running;           /* Are we running? */
   gboolean initialized;       /* Have we been initialized? */
   int generation_time;        /* Generations simulated */
-  int influence_radius;       /* Distance (in number of sites) of Ising-like 
-                                 interactions */
-  double occupancy;           /* Lattice occupancy */
-  double up;                  /* Keeps track of spins in the up (+1) state */
-  double down;                /* Keeps track of spins in the down (-1) state */
-  double birth_rate;          /* Contact Process' birth rate */
-  double death_rate;          /* Contact Process' death rate */
-  double differentiation_rate;/* Rate at which occupied sites get a 
-                                 differentiated state */
-  double temperature;         /* Ising model's temperature (T) */
-  double coupling;            /* Ising model's coupling (J) parameter */
-  double magnetic_field;      /* Ising model's magnetic field (B) */
-  } s;                        /* Instance s of struct */
+  int Ising_neighboorhood;    /* Ising Neighboorhood: r=1 (NN) vs r=2 (NNN)*/
+  double occupancy;              /* Lattice occupancy */
+  int vacancy;                 /* Lattice vacancy*/
+  double up;                  /* Number of spins in the up   (+1) state */
+  double down;                /* Number of spins in the down (-1) state */
+  double birth_rate;          /* Contact Process' birth */
+  double death_rate;          /* Contact Process' death */
+  double alpha_rate;          /* Differentiation into spin state */
+  double T;                   /* Ising's temperature */
+  double J;                   /* Ising's coupling: ferro (-kB) or anti-ferro (+kB) */
+  double lamda_rate;          /* Contact-Ising Monte Carlo biass*/
+} s ;        // instance s of the structure to hold the simulation
 
 
-
+// Declare PUT PIXEL function to access individual pixel data on a Pixel Buffer. Implemented at the end of document.
+void put_pixel(GdkPixbuf *pixbuf, int x, int y, guchar red, guchar green, guchar blue, guchar alpha);
 
 
 
@@ -52,22 +52,6 @@ static void stop_simulation (gpointer data)
     }
   }
 
-
-
-/* Implementation of put pixel function. Code retrieved from:
-   https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-The-GdkPixbuf-Structure.html */
-void put_pixel (GdkPixbuf *pixbuf, int x, int y,
-                guchar red, guchar green, guchar blue, guchar alpha)
-  {
-  guchar *pixels, *p;
-  int rowstride, numchannels;
-  numchannels = gdk_pixbuf_get_n_channels(pixbuf);
-  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
-  pixels = gdk_pixbuf_get_pixels(pixbuf);
-  p = pixels + y * rowstride + x * numchannels;
-  p[0] = red;	p[1] = green; p[2] = blue; p[3] = alpha;
-  return;
-  }
 
 
 /* Creates a pixel buffer and paints an image to display as default canvas */
@@ -90,14 +74,17 @@ static void paint_a_background (gpointer data)
   }
 
 
-
-
 /* Function that paints the pixel buffer with the simulation data   */
+// The states are:
+//  0: vacant
+// -1: spin down
+// +1: spin up
+//  2: undifferenciated
 static void paint_lattice (gpointer data)
   {
+  // we make a Gdk pixbuffer to paint configurations
   GdkPixbuf *p;
   p = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
-
   /* Paint lattice configuration to a pixel buffer */
   int x, y;
   for (x = 0; x < X_SIZE; x++)
@@ -106,21 +93,21 @@ static void paint_lattice (gpointer data)
       {
       switch (s.lattice_configuration[x][y])
         {
-        case 0:	/* Empty site. Paint white */
+        case 0:	/* Empty (vacant) site  (black) */
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 0, (guchar) 0, (guchar) 0, 255);
+          break;
+        case -1:	/* Spin down (occupied) site (green) */
+          put_pixel (p, (int) x, (int) y, 
+                       (guchar) 0, (guchar) 255, (guchar) 0, 255);
+          break;
+        case 1:	  /* Spin  up  (occupied) site (magenta) */
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 255, (guchar) 0, (guchar) 255, 255);
+          break;
+        case 2:	/*  Un-differentiated (occupied) site (white) */
           put_pixel (p, (int) x, (int) y, 
                      (guchar) 255, (guchar) 255, (guchar) 255, 255);
-          break;
-        // case 2:	/* Occupied, un-differentiated site. Paint black */
-        //   put_pixel (p, (int) x, (int) y, 
-        //              (guchar) 48, (guchar) 48, (guchar) 48, 255);
-        //   break;
-        case 1:	/* Occupied, +1 site. Paint red */
-          put_pixel (p, (int) x, (int) y, 
-                     (guchar) 249, (guchar) 237, (guchar) 105, 255);
-          break;
-        case -1:	/* Occupied, -1 site. Paint green */
-          put_pixel (p, (int) x, (int) y, 
-                     (guchar) 106, (guchar) 44, (guchar) 112, 255);
           break;
         }
       }
@@ -151,8 +138,78 @@ void get_closest_neighbors(int x, int y, int r, int* neighbors)
   }
 
 
+int energyKS (int random_x_coor2, int random_y_coor2)
+	{
+    int J=s.J;
+   int IR =0;
+//IR = s.Ising_neighboorhood;
+	int E0, Et;
+	int R = 0;
+	int G = 0;
+	if (IR == 0)
+    	{
+        if      (s.lattice_configuration[random_x_coor2][random_y_coor2] == 2){E0 = 1;}
+    	else if (s.lattice_configuration[random_x_coor2][random_y_coor2] == 3){E0 =-1;}
+    	
+        if      (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][random_y_coor2] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][random_y_coor2] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][random_y_coor2] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][random_y_coor2] == 3){G++;}
+    	}
+    else if (IR == 1)
+        {    
+        if      (s.lattice_configuration[random_x_coor2][random_y_coor2] == 2){E0 = 1;}
+    	else if (s.lattice_configuration[random_x_coor2][random_y_coor2] == 3){E0 =-1;}
+    	
+        if      (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][random_y_coor2] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][random_y_coor2] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][random_y_coor2] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][random_y_coor2] == 3){G++;}
+    	
+    	
+        if      (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2+2)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2+2)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2-2)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[random_x_coor2][(int)((Y_SIZE + random_y_coor2-2)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-2)%X_SIZE)][random_y_coor2] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-2)%X_SIZE)][random_y_coor2] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+2)%X_SIZE)][random_y_coor2] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+2)%X_SIZE)][random_y_coor2] == 3){G++;}
+    	
 
-
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2-1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2-1)%Y_SIZE)] == 3){G++;}
+    	
+        if      (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 2){R++;}
+    	else if (s.lattice_configuration[(int)((X_SIZE + random_x_coor2+1)%X_SIZE)][(int)((Y_SIZE + random_y_coor2+1)%Y_SIZE)] == 3){G++;}
+    	}
+        
+	Et = J*E0*(R-G);
+	return Et;
+	}
 
 /* Function used to compute the energy value of the site located at (x, y) */
 double compute_energy (int x, int y)
@@ -160,12 +217,12 @@ double compute_energy (int x, int y)
   double energy;
   int spin;
   double neighborhood_configuration = 0;
-  int num_neighbors = pow(s.influence_radius, 2) + pow(s.influence_radius + 1, 2);
+  int num_neighbors = 4;//pow(s.influence_radius, 2) + pow(s.influence_radius + 1, 2);
   int neighborhood[num_neighbors];
 
   spin = s.lattice_configuration[x][y];
 
-  get_closest_neighbors (x, y, s.influence_radius, neighborhood);
+  get_closest_neighbors (x, y, s.Ising_neighboorhood, neighborhood);
   
   for (int n = 0; n < num_neighbors; n++) 
     {
@@ -173,7 +230,7 @@ double compute_energy (int x, int y)
     // if (neighborhood[n] == 2) {continue;} 
     neighborhood_configuration += neighborhood[n];
     }
-  energy = spin*(s.coupling * neighborhood_configuration - s.magnetic_field);
+  energy = spin*(s.J * neighborhood_configuration);
   return energy;
   }
 
@@ -266,7 +323,7 @@ int update_lattice (gpointer data)
           {
           spin_energy = compute_energy (random_x_coor, random_y_coor);
           spin_energy_diff = -2 * spin_energy;
-          transition_probability = exp (-spin_energy_diff/s.temperature);
+          transition_probability = exp (-spin_energy_diff/s.T);
           if (spin_energy_diff < 0 || 
               genrand64_real2 () < transition_probability)
             {
@@ -287,7 +344,7 @@ int update_lattice (gpointer data)
           {
           spin_energy = compute_energy (random_x_coor, random_y_coor);
           spin_energy_diff = -2 * spin_energy;
-          transition_probability = exp (-spin_energy_diff/s.temperature);
+          transition_probability = exp (-spin_energy_diff/s.T);
           if (spin_energy_diff < 0 || 
               genrand64_real2 () < transition_probability)
             {
@@ -301,8 +358,8 @@ int update_lattice (gpointer data)
     }
   s.generation_time ++;
   paint_lattice (data);
-  g_print ("Gen: %d \t Occupancy: %f \t Up: %f \t Down: %f\n", 
-           s.generation_time, s.occupancy/(X_SIZE*Y_SIZE), 
+  g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
+           s.generation_time, (double)s.vacancy/(X_SIZE*Y_SIZE), s.occupancy/(X_SIZE*Y_SIZE), 
            s.up/s.occupancy, s.down/s.occupancy);
 
   /* This is a simple occupancy check to avoid keep running the simulation
@@ -338,6 +395,7 @@ static void init_lattice (GtkWidget *widget, gpointer data)
   s.occupancy = 0.0;
   s.up = 0;
   s.down = 0;
+  s.vacancy = (int) X_SIZE*Y_SIZE;
 
   // /* Set a site in the moddle of the lattice occupied (un-differntiated)  */
   // s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = 2;
@@ -411,7 +469,7 @@ static void influence_radius_scale_moved (GtkRange *range, gpointer user_data)
   {
   GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
-  s.influence_radius = (float) pos;
+  s.Ising_neighboorhood = (float) pos;
   gchar *str = g_strdup_printf ("radius = %d", (int) pos);
   gtk_label_set_text (GTK_LABEL (label), str);
   g_free (str);
@@ -447,7 +505,7 @@ static void temperature_scale_moved (GtkRange *range, gpointer user_data)
   {
   GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
-  s.temperature = (float) pos;
+  s.T = (float) pos;
   gchar *str = g_strdup_printf ("temperature = %.2f", pos);
   gtk_label_set_text (GTK_LABEL (label), str);
   g_free (str);
@@ -459,23 +517,12 @@ static void coupling_scale_moved (GtkRange *range, gpointer user_data)
   {
   GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
-  s.coupling = (float) pos;
+  s.J = (float) pos;
   gchar *str = g_strdup_printf ("coupling = %.2f", pos);
   gtk_label_set_text (GTK_LABEL (label), str);
   g_free (str);
   }
 
-
-/*  Callback to respond Gtk scale slide move event */
-static void magnetic_field_scale_moved (GtkRange *range, gpointer user_data)
-  {
-  GtkWidget *label = user_data;
-  gdouble pos = gtk_range_get_value (range);
-  s.magnetic_field = (float) pos;
-  gchar *str = g_strdup_printf ("magnetic field = %.2f", pos);
-  gtk_label_set_text (GTK_LABEL (label), str);
-  g_free (str);
-  }
 
 
 
@@ -500,13 +547,12 @@ static void activate (GtkApplication *app, gpointer user_data)
   init_genrand64 (seed);
 
   /* Set default parameters of the simulation */
-  s.influence_radius = 1;
+  s.Ising_neighboorhood = 1;
   s.birth_rate = 1.00;
   s.death_rate = 0.00;
   // s.differentiation_rate = 1.0;
-  s.temperature = 0.001;
-  s.coupling = -1.00;
-  s.magnetic_field = 0.00;
+  s.T = 0.001;
+  s.J = -1.00;
 
   /* Set simulation flags */
   s.running = FALSE;
@@ -609,6 +655,25 @@ static void activate (GtkApplication *app, gpointer user_data)
   /* Show the window and all widgets */
   gtk_widget_show_all (window);
   }
+
+
+
+
+/* Implementation of put pixel function. Code retrieved from:
+   https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-The-GdkPixbuf-Structure.html */
+void put_pixel (GdkPixbuf *pixbuf, int x, int y,
+                guchar red, guchar green, guchar blue, guchar alpha)
+  {
+  guchar *pixels, *p;
+  int rowstride, numchannels;
+  numchannels = gdk_pixbuf_get_n_channels(pixbuf);
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  pixels = gdk_pixbuf_get_pixels(pixbuf);
+  p = pixels + y * rowstride + x * numchannels;
+  p[0] = red;	p[1] = green; p[2] = blue; p[3] = alpha;
+  return;
+  }
+
 
 
 
