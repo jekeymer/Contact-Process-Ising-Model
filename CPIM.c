@@ -263,7 +263,8 @@ int update_lattice_KS(gpointer data)
 		random_y_coor = (int) floor(genrand64_real3()*Y_SIZE);
 		switch(s.lattice_configuration[random_x_coor][random_y_coor])
 			{
-			case 0: // if the site is empty
+      // if the site is empty
+			case 0: 
 				// chose a random neighboor from the 4 posible ones
         // Note: for the Contact Process we always use NN! 
 				random_neighboor = (long) floor(genrand64_real3()*4);
@@ -297,8 +298,9 @@ int update_lattice_KS(gpointer data)
 					      {case -1: s.down ++; break; case 1: s.up++; break;}
         		}
           }
-				break; 
-			case 2: // if the site is occupied but not in spin state (* state),
+				break;
+       // if the site is occupied but is not a spin variable (state *) 
+			case 2:
               // sites can adopt state -1 or 1 with probability alpha_rate
 				      // and 
               // if a particle is present at the focal site, 
@@ -341,7 +343,8 @@ int update_lattice_KS(gpointer data)
                  break;
                 }
         break;
-    	case -1: // if the site is occupied & it is in spin state (-1),
+      // if the site is occupied & it is in spin down (state -1),
+    	case -1: 
         // HERE GILLISPIE should be used again!!!
         reaction_rate[0] = s.death_rate; // reaction 1 is death
         reaction_rate[1] = 1; // reaction 2 is spin flip: [-]==>[+] FOR NOW 1
