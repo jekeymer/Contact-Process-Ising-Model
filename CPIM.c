@@ -11,8 +11,18 @@
 /* Lattice Size */
 #define X_SIZE 256
 #define Y_SIZE 256
-/* Generation we wait to paint and print stats */
+
+/* Defaulfs */
 #define SAMPLE 100
+#define BETA   0.01     
+#define DELTA  0.0001
+#define ALPHA  0.1
+#define LAMBDA 1
+#define COUPLING -1.0
+#define TEMPERATURE 2.269
+#define RADIUS 1
+#define INIT 1
+
 
 /* Structure with the simulation data */
 struct simulation
@@ -28,6 +38,7 @@ struct simulation
   int vacancy;             /* Lattice vacancy*/
   int up;                  /* Number of spins in the up   (+1) state */
   int down;                /* Number of spins in the down (-1) state */
+  int display_rate;           /* Display rate: to paint the lattice*/
   double birth_rate;          /* Contact Process' birth */
   double death_rate;          /* Contact Process' death */
   double differentiation_rate;/* Differentiation into spin state */
@@ -122,24 +133,6 @@ static void paint_lattice (gpointer data)
 
 
 
-/* Function to get the closest neighbors (separated by r sites) of a given site 
-   in the lattice */
-void get_closest_neighbors(int x, int y, int r, int* neighbors)
-  {
-  int n = 0;
-  for (int i = -r; i <= r; i++) 
-    {
-    for (int j = -r; j <= r; j++) 
-      {
-      if (i == 0 && j == 0) {continue;}
-			else if (abs(i) + abs(j) > r) {continue;}
-      neighbors[n++] = s.lattice_configuration[(int) (X_SIZE + x + i) % X_SIZE]
-                                              [(int) (Y_SIZE + y + j) % Y_SIZE];
-      }
-    }
-  }
-
-
 int energy_KS (int x, int y)
 	{
   //int J = s.J;
@@ -224,6 +217,24 @@ int energy_KS (int x, int y)
 
 
 
+/* Function to get the closest neighbors (separated by r sites) of a given site 
+   in the lattice */
+void get_closest_neighbors(int x, int y, int r, int* neighbors)
+  {
+  int n = 0;
+  for (int i = -r; i <= r; i++) 
+    {
+    for (int j = -r; j <= r; j++) 
+      {
+      if (i == 0 && j == 0) {continue;}
+			else if (abs(i) + abs(j) > r) {continue;}
+      neighbors[n++] = s.lattice_configuration[(int) (X_SIZE + x + i) % X_SIZE]
+                                              [(int) (Y_SIZE + y + j) % Y_SIZE];
+      }
+    }
+  }
+
+
 
 /* Function used to compute the energy value of the site located at (x, y) */
 double compute_energy (int x, int y)
@@ -231,7 +242,7 @@ double compute_energy (int x, int y)
   double energy;
   int spin;
   double neighborhood_configuration = 0;
-  int num_neighbors = 4;//pow(s.influence_radius, 2) + pow(s.influence_radius + 1, 2);
+  int num_neighbors = 4;//pow(s.Ising_neighboorhood, 2) + pow(s.Ising_neighboorhood + 1, 2);
   int neighborhood[num_neighbors];
 
   spin = s.lattice_configuration[x][y];
@@ -241,7 +252,7 @@ double compute_energy (int x, int y)
   for (int n = 0; n < num_neighbors; n++) 
     {
     // /* If neighbor has no spin, go to the next one */
-    // if (neighborhood[n] == 2) {continue;} 
+    //if (neighborhood[n] == 2) {continue;} 
     neighborhood_configuration += neighborhood[n];
     }
   energy = spin*(s.J * neighborhood_configuration);
@@ -809,7 +820,7 @@ int update_lattice_LM (gpointer data)
       }
     }
   s.generation_time ++;
-  if(s.generation_time%SAMPLE == 0) 
+  if(s.generation_time%s.display_rate == 0) 
     {paint_lattice (data);
   g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
            s.generation_time, (double) s.vacancy/(double) (Y_SIZE*X_SIZE), (double) s.occupancy/(double) (Y_SIZE*X_SIZE), (double) s.up/(double) (s.occupancy), (double) s.down/(double) s.occupancy);
@@ -1037,14 +1048,14 @@ static void temperature_scale_moved (GtkRange *range, gpointer user_data)
 
 
 /*  Callback to respond Gtk scale slide move event */
-static void coupling_scale_moved (GtkRange *range, gpointer user_data)
+static void display_rate_scale_moved (GtkRange *range, gpointer user_data)
   {
-  GtkWidget *label = user_data;
+  //GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
-  s.J = (float) pos;
-  gchar *str = g_strdup_printf ("coupling = %.2f", pos);
-  gtk_label_set_text (GTK_LABEL (label), str);
-  g_free (str);
+  s.display_rate = (int) pos;
+  //gchar *str = g_strdup_printf ("coupling = %.2f", pos);
+  //gtk_label_set_text (GTK_LABEL (label), str);
+  //g_free (str);
   }
 
 
@@ -1056,25 +1067,27 @@ static void initialize_simulation(void)
 
   /* Set default parameters of the simulation */
   //initial condition option
-   s.init_option = 1;
+   s.init_option = (int) INIT;
 
   // Contact Process
-  s.birth_rate = 0.01;
-  s.death_rate = 0.000001;
+  s.birth_rate = (double) BETA;
+  s.death_rate = (double) DELTA;
 
   // Cell differenciation
-  s.differentiation_rate = 0.01;
+  s.differentiation_rate = (double) ALPHA;
 
   // Ising Model 
   // interaction radius 
-  s.Ising_neighboorhood = 1;
+  s.Ising_neighboorhood = (int) RADIUS;
   // Temperature
-  s.T = 2.2469;
+  s.T = (double) TEMPERATURE;
   // Spin coupling
-  s.J = -1.00;
+  s.J = (double) COUPLING;
   /* Set simulation flags */
   s.running = FALSE;
   s.initialized = FALSE;
+  // Display rate to paint the lattice
+  s.display_rate = (int) SAMPLE;
 }
 
 
@@ -1115,7 +1128,7 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   // Add a verical separator to the parameter grid for order
   separator = gtk_separator_new (GTK_ORIENTATION_VERTICAL);
-  gtk_grid_attach (GTK_GRID (grid), separator, 1, 0, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), separator, 1, 0, 1, 2);
   //
   // We make another Frame for the Coupling Strength 
   //(ferro vs anti-ferro magnetic)
@@ -1133,7 +1146,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // Add the packing box to the Coupling strength Frame
   gtk_container_add (GTK_CONTAINER (frame), box);
-  gtk_grid_attach (GTK_GRID (grid), frame, 2, 0, 1, 1);
+  gtk_grid_attach (GTK_GRID (grid), frame, 2, 0, 1, 2);
 
   // Now we are done with pre-packing the radio choices in Frames
 
@@ -1145,6 +1158,8 @@ static void activate (GtkApplication *app, gpointer user_data)
   
   // scale bar to set birth rate
   scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
+  // we set it to its default value
+  gtk_range_set_value (GTK_RANGE(scale), (gfloat) BETA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), NULL);
   // we pack it in a Frame
   frame = gtk_frame_new("Birth rate");
@@ -1154,6 +1169,8 @@ static void activate (GtkApplication *app, gpointer user_data)
   
   // scale bar to set death rate
   scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0,0.5,0.0001);
+  // we set it to its default value
+  gtk_range_set_value (GTK_RANGE(scale), (gfloat) DELTA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (death_rate_scale_moved), NULL);
   // we pack it in a Frame
   frame = gtk_frame_new ("Death rate");
@@ -1163,6 +1180,8 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   // scale bar to set the cell differenciation rate 
   scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
+  // we set it to its default value
+  gtk_range_set_value (GTK_RANGE(scale), (gfloat) ALPHA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (differenciation_rate_scale_moved), NULL);
   // we pack it in a Frame
   frame = gtk_frame_new ("Differenciation rate");
@@ -1181,6 +1200,8 @@ static void activate (GtkApplication *app, gpointer user_data)
 
   // make a scale bar to set Temperature
   scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.01,10,0.01);
+  // we set it to its default value
+  gtk_range_set_value (GTK_RANGE(scale), (gfloat) TEMPERATURE);
   g_signal_connect (scale, "value-changed", G_CALLBACK (temperature_scale_moved), NULL);
   frame =  gtk_frame_new ("Temperature");
   gtk_container_add (GTK_CONTAINER (frame), scale);
@@ -1188,11 +1209,18 @@ static void activate (GtkApplication *app, gpointer user_data)
 
 
   // make a scale bar to set Monte Carlio Bias
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
+  //scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
+  // we set it to its default value
+  //??
  //g_signal_connect (scale, "value-changed", G_CALLBACK (temperature_scale_moved), NULL);
-  frame =  gtk_frame_new ("Contact-Ising bias");
-  gtk_container_add (GTK_CONTAINER (frame), scale);
-  gtk_container_add (GTK_CONTAINER (box), frame);
+  //frame =  gtk_frame_new ("Contact-Ising bias");
+  //gtk_container_add (GTK_CONTAINER (frame), scale);
+  //gtk_container_add (GTK_CONTAINER (box), frame);
+
+  // Add a verical separator to the parameter grid for order
+  separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
+  gtk_container_add (GTK_CONTAINER (box), separator);
+  
 
 
   // add the grid contasining the pre-packed radio buttons to control spin coupling
@@ -1303,6 +1331,20 @@ static void activate (GtkApplication *app, gpointer user_data)
   // We finally place the frame on row 8 of our grid spanning 5 columns
   gtk_grid_attach (GTK_GRID (grid), ctrl_frame, 0, 8, 5, 1);
 
+
+
+//....
+ // scale bar to set display rate 
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,1,100,10);
+  gtk_range_set_value (GTK_RANGE(scale), (gfloat) SAMPLE);
+  g_signal_connect (scale, "value-changed", G_CALLBACK (display_rate_scale_moved), NULL);
+  // we pack it in a Frame
+  frame = gtk_frame_new ("Display rate");
+  gtk_container_add (GTK_CONTAINER (frame), scale );
+  // we add that Frame to the CP box
+ // gtk_container_add (GTK_CONTAINER (box), frame);
+  gtk_grid_attach (GTK_GRID (grid), frame, 0, 9, 5, 1);
+//....
 
 
   
