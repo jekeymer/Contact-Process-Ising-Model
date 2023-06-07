@@ -673,7 +673,6 @@ int update_lattice_LM (gpointer data)
           }
         break; /* break case 0 */
       case 2: /* Focal point is in the occupied, undifferentiated state */
-        g_print("state 2 detected\n");
        if (genrand64_real2 () < s.death_rate)
            {
            s.lattice_configuration[random_x_coor][random_y_coor] = 0;
@@ -683,7 +682,6 @@ int update_lattice_LM (gpointer data)
            {
             /* Set an occupied site in the middle of the lattice */
            random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
-           g_print("random spin is: %d\n", random_spin);
             if (random_spin == 1)
               {
               s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
@@ -744,7 +742,7 @@ int update_lattice_LM (gpointer data)
   if(s.generation_time%SAMPLE == 0) 
     {paint_lattice (data);
   g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
-           s.generation_time, (double)s.vacancy/(double)(Y_SIZE*X_SIZE), (double)s.occupancy/(double)(Y_SIZE*X_SIZE), (double)s.up/(double)(s.occupancy), (double)s.down/(double)s.occupancy);
+           s.generation_time, (double) s.vacancy/(double) (Y_SIZE*X_SIZE), (double) s.occupancy/(double) (Y_SIZE*X_SIZE), (double) s.up/(double) (s.occupancy), (double) s.down/(double) s.occupancy);
     }
   /* This is a simple occupancy check to avoid keep running the simulation
     when there's no particle left on the lattice */
@@ -784,7 +782,6 @@ static void init_lattice (GtkWidget *widget, gpointer data)
       case 1:
             /* Set an occupied site in the middle of the lattice */
             random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
-            g_print ("%d\n",random_spin);
             if (random_spin == 1)
               {
               s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = random_spin;
