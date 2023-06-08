@@ -133,131 +133,70 @@ static void paint_lattice (gpointer data)
 
 
 
-int energy_KS (int x, int y)
+double energy_KS (int x, int y)
 	{
-  //int J = s.J;
-	//int E0;  // Energy of site at coordinate (x,y)
-  int Energy; // it is integer as it is in kB*T units
-	int up = 0;   //R:: 2 = +1 = up = Red 
-	int down = 0;   // G::   3 = -2 = down = Green
+  // Energy of site at coordinate (x,y)
+  double Energy; //in kB*T units
+	int up = 0;   
+	int down = 0; 
 	if (s.Ising_neighboorhood == 1)  // Nearest Neighboorhood (NN) has 4 sites
-    	{ // we map the states to spins
-      // wich is no longer needed with new state convension
-      //E0 = s.lattice_configuration[x][y];
-      //if (s.lattice_configuration[x][y] == 2){E0 = 1;} // 2 -> +1
-    	//else if (s.lattice_configuration[x][y] == 3){E0 =-1;} // 3 -> -1
-    	// check this energy funcion IS NEVER called if state is not -1 or +1
+    	{ 
       // we check the South (S) neighboor (#1)
-      if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 2){up++;}
-    	 else if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
+      if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 1){up++;}
+    	 else if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == -1){down++;}
     	// we check the North (N) neighboor (#2)
-      if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == 2){up++;}
-    	 else if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == 3){down++;}
+      if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == 1){up++;}
+    	 else if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == -1){down++;}
     	// we check the West (W) neighboor  (#3)
-      if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == 2){up++;}
-    	 else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == 3){down++;}
+      if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == 1){up++;}
+    	 else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == -1){down++;}
     	// we check the East (E) neighboor  (#4)
-      if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == 2){up++;}
-    	 else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == 3){down++;}
+      if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == 1){up++;}
+    	 else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == -1){down++;}
     	}
     else if (s.Ising_neighboorhood == 2) //Next Nearest Neighboorhood (NNN) has 12 sites
-        { // we map the states to spins
-        // which is the case for NN, here also is no longer needed
-        // with the new convencion on stetes
-        //E0 = s.lattice_configuration[x][y];
-        //if (s.lattice_configuration[x][y] == 2){E0 = 1;} // 2 -> +1
-    	  //else if (s.lattice_configuration[x][y] == 3){E0 =-1;} // 3 -> -1
-    	  // same check about calling this...
+        { 
         // we check the South (S) neighboor (#1)
-        if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y+1)%Y_SIZE)] == -1){down++;}
     	  // we check the North (N) neighboor (#2)
-        if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y-1)%Y_SIZE)] == -1){down++;}
     	  // we check the West (W) neighboor (#3)
-        if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][y] == -1){down++;}
     	  // we check the East (E) neighboor (#4)
-        if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][y] == -1){down++;}
         // we check the South-South (SS) neighboor (#5)
-        if (s.lattice_configuration[x][(int)((Y_SIZE + y+2)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y+2)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[x][(int)((Y_SIZE + y+2)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y+2)%Y_SIZE)] == -1){down++;}
     	  // we check the North-North (NN) neighboor (#6)
-        if (s.lattice_configuration[x][(int)((Y_SIZE + y-2)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y-2)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[x][(int)((Y_SIZE + y-2)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[x][(int)((Y_SIZE + y-2)%Y_SIZE)] == -1){down++;}
     	  // we check the West-West (WW) neighboor   (#7)
-        if (s.lattice_configuration[(int)((X_SIZE + x-2)%X_SIZE)][y] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x-2)%X_SIZE)][y] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x-2)%X_SIZE)][y] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x-2)%X_SIZE)][y] == -1){down++;}
     	  // we chack the East-East (EE) neighboor   (#8)
-        if (s.lattice_configuration[(int)((X_SIZE + x+2)%X_SIZE)][y] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x+2)%X_SIZE)][y] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x+2)%X_SIZE)][y] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x+2)%X_SIZE)][y] == -1){down++;}
     	  // we check the South-West (SW) neighboor  (#9)
-        if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == -1){down++;}
     	  // we check the North-East (NE) neighboor  (#10)      
-        if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == -1){down++;}
     	  // we check the North-West (NW) neighboor  (#11)
-        if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == 3){down++;}
+        if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x-1)%X_SIZE)][(int)((Y_SIZE + y-1)%Y_SIZE)] == -1){down++;}
        	// we check the South-East (SE) neighboor  (#12)
-        if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 2){up++;}
-    	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 3){down++;}
-    	  }
-        
-	//Et = s.J*E0*(up-down);
-  // this function is only called if state is a spin state!
-  // i.e. s.lattice_configuration[x][y] = -1 OR + 1
-	Energy = s.J*s.lattice_configuration[x][y]*(up-down);
-  return Energy;
+        if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 1){up++;}
+    	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == -1){down++;}
+    	  }     
+	Energy = s.J * s.lattice_configuration[x][y] * (up-down);
+  return (double) Energy;
 	}
 
-
-
-
-
-/* Function to get the closest neighbors (separated by r sites) of a given site 
-   in the lattice */
-void get_closest_neighbors(int x, int y, int r, int* neighbors)
-  {
-  int n = 0;
-  for (int i = -r; i <= r; i++) 
-    {
-    for (int j = -r; j <= r; j++) 
-      {
-      if (i == 0 && j == 0) {continue;}
-			else if (abs(i) + abs(j) > r) {continue;}
-      neighbors[n++] = s.lattice_configuration[(int) (X_SIZE + x + i) % X_SIZE]
-                                              [(int) (Y_SIZE + y + j) % Y_SIZE];
-      }
-    }
-  }
-
-
-
-/* Function used to compute the energy value of the site located at (x, y) */
-double compute_energy (int x, int y)
-  {
-  double energy;
-  int spin;
-  double neighborhood_configuration = 0;
-  int num_neighbors = 4;//pow(s.Ising_neighboorhood, 2) + pow(s.Ising_neighboorhood + 1, 2);
-  int neighborhood[num_neighbors];
-
-  spin = s.lattice_configuration[x][y];
-
-  get_closest_neighbors (x, y, s.Ising_neighboorhood, neighborhood);
-  
-  for (int n = 0; n < num_neighbors; n++) 
-    {
-    // /* If neighbor has no spin, go to the next one */
-    //if (neighborhood[n] == 2) {continue;} 
-    neighborhood_configuration += neighborhood[n];
-    }
-  energy = spin*(s.J * neighborhood_configuration);
-  return energy;
-  }
 
 
 
@@ -265,6 +204,7 @@ double compute_energy (int x, int y)
 int update_lattice_KS(gpointer data)
 {
 	long random_number; 
+  double transition_probability;
 	double total_reaction_rate , reaction_rate[2]; // Gillispie 
 	int reaction, random_neighbor_state;
 	long random_neighboor;
@@ -329,7 +269,8 @@ int update_lattice_KS(gpointer data)
         reaction_rate[1] = s.differentiation_rate; // reaction 2 is differenciation
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-        if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+        transition_probability = reaction_rate[0]/total_reaction_rate;
+        if (genrand64_real2() < transition_probability) 
             {reaction = 1;} 
               else {reaction = 2;};
         switch(reaction)
@@ -369,7 +310,8 @@ int update_lattice_KS(gpointer data)
         reaction_rate[1] = 1; // reaction 2 is spin flip: [-]==>[+] FOR NOW 1
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-        if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+        transition_probability = reaction_rate[0]/total_reaction_rate; 
+        if (genrand64_real2() <  transition_probability) 
             {reaction = 1;} 
               else {reaction = 2;}; 
           switch(reaction)
@@ -438,53 +380,7 @@ int update_lattice_KS(gpointer data)
                  break; 
                 }    
         break;	 
-      }; /*
-        int MC = 0;
-        for (MC; MC < 100; MC++)
-    		{
-      		//pick a second random focal site
-      		random_x_coor2 = (int) floor(genrand64_real3()*X_SIZE); 
-      		random_y_coor2 = (int) floor(genrand64_real3()*Y_SIZE);
-      		switch(s.lattice_configuration[random_x_coor2][random_y_coor2])
-      			{
-      			case 2: // Calcula la energía de un punto
-          			if (genrand64_real2() < s.death_rate)
-        				{
-        				s.lattice_configuration[random_x_coor2][random_y_coor2]= 0; s.occupancy --;
-        				}
-    				else
-        				{
-          				random_number1 = genrand64_real3(); // r must be a random number such that 0 < r < 1
-          				E1 = energy_KS (random_x_coor2, random_y_coor2);
-          				dE1 = -E1-E1;
-          				B1 = exp(-dE1/s.T);
-          				if (dE1 < 0 || random_number1 < B1)
-              				{
-              				s.lattice_configuration[random_x_coor2][random_y_coor2] = 3;
-              				}
-              			}	
-      				break;
-      			case 3: //
-          			if (genrand64_real2() < s.death_rate)
-        				{
-        				s.lattice_configuration[random_x_coor2][random_y_coor2]= 0; s.occupancy --;
-        				}
-        			else
-            			{	
-          				random_number2 = genrand64_real3(); // r must be a random number such that 0 < r < 1
-          				E2 = energy_KS (random_x_coor2, random_y_coor2);
-          				dE2 = -E2-E2;
-          				B2 = exp(-dE2/s.T);
-                          if (dE2 < 0 || random_number2 < B2)
-              				{
-              				s.lattice_configuration[random_x_coor2][random_y_coor2] = 2;
-              				}
-              			}		
-      				break;
-      			}
-      		}
-  		}
-      */
+      };
    }
   s.generation_time ++;
    if(s.generation_time%SAMPLE == 0) 
@@ -498,150 +394,13 @@ int update_lattice_KS(gpointer data)
 
 
 
-/* Update function   */
-int update_lattice (gpointer data)
-  {
-  // int random_neighbor;
-  int random_neighbor_state;
-  int random_spin;
-  double spin_energy, spin_energy_diff;
-  // Boltzmann factor
-  double transition_probability;
-  // Gillispie algorithm
-  double total_reaction_rate , reaction_rate[2]; 
-  // random site to calculate (Monte Carlo method)
-  int random_x_coor, random_y_coor;
-
-  int contact_process_radius = 1;
-  int num_neighbors = pow(contact_process_radius, 2) + pow(contact_process_radius + 1, 2);
-  int neighbors[num_neighbors];
-  // Monte Carlo: repeat for as many sites there are in the Lattice
-  for (int site = 0; site < (int) (Y_SIZE*X_SIZE); site++)
-    {
-    /* Pick a random focal site */
-    random_x_coor = (int) floor (genrand64_real3 ()* X_SIZE);
-    random_y_coor = (int) floor (genrand64_real3 ()* Y_SIZE);
-    switch (s.lattice_configuration[random_x_coor][random_y_coor])
-      {
-      case 0: /* Site is empty */
-        /* Chose a random neighbor from the num_neighbors posible ones */
-        get_closest_neighbors (random_x_coor, random_y_coor, 
-                               contact_process_radius, neighbors);
-        random_neighbor_state = neighbors[(int) floor (genrand64_real3 () 
-                                          * (num_neighbors))];
-
-        /* If its random neighbor is occupied: put a copy at the focal site 
-           with probability brith_rate * dt */
-        if (genrand64_real2 () < s.birth_rate)
-          {
-          if (random_neighbor_state == 2)
-            {
-            s.lattice_configuration[random_x_coor][random_y_coor] = 2;
-            s.occupancy ++; 
-            }
-          else if (random_neighbor_state == 1)
-            {
-            s.lattice_configuration[random_x_coor][random_y_coor] = 1; 
-            s.occupancy ++; 
-            s.up ++;
-            }
-          else if (random_neighbor_state == -1)
-            {
-            s.lattice_configuration[random_x_coor][random_y_coor] = -1;
-            s.occupancy ++;
-            s.down ++;
-            }
-          }
-        break; /* break case 0 */
-      // case 2: /* Focal point is in the occupied, undifferentiated state */
-      //   if (genrand64_real2 () < s.death_rate)
-      //     {
-      //     s.lattice_configuration[random_x_coor][random_y_coor] = 0;
-      //     s.occupancy --;
-      //     }
-      //   else if (genrand64_real2 () < s.differentiation_rate)
-      //     {
-      //     /* Set an occupied site in the middle of the lattice */
-      //     random_spin = ((genrand64_int64 () % 2) * 2) - 2;
-      //     if (random_spin == 1)
-      //       {
-      //       s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
-      //       s.up ++;
-      //       }
-      //     else if (random_spin == -1)
-      //       {
-      //       s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
-      //       s.down ++;
-      //       }
-      //     }
-      //   break;
-      case 1: /* Focal point is in the up (+1) state */
-        if (genrand64_real2 () < s.death_rate)
-          {
-          s.lattice_configuration[random_x_coor][random_y_coor] = 0;
-          s.occupancy --;
-          s.up --;
-          }
-        else
-          {
-          spin_energy = compute_energy (random_x_coor, random_y_coor);
-          spin_energy_diff = -2 * spin_energy;
-          transition_probability = exp (-spin_energy_diff/s.T);
-          if (spin_energy_diff < 0 || 
-              genrand64_real2 () < transition_probability)
-            {
-            s.lattice_configuration[random_x_coor][random_y_coor] = -1;
-            s.up --;
-            s.down ++;
-            }
-          }
-        break;
-      case -1: /* Focal point is in the down (-1) state */
-        if (genrand64_real2 () < s.death_rate)
-          {
-          s.lattice_configuration[random_x_coor][random_y_coor]= 0;
-          s.occupancy --;
-          s.down --;
-          }
-        else
-          {
-          spin_energy = compute_energy (random_x_coor, random_y_coor);
-          spin_energy_diff = -2 * spin_energy;
-          transition_probability = exp (-spin_energy_diff/s.T);
-          if (spin_energy_diff < 0 || 
-              genrand64_real2 () < transition_probability)
-            {
-            s.lattice_configuration[random_x_coor][random_y_coor] = 1;
-            s.down --;
-            s.up ++;
-            }
-          }
-        break;
-      }
-    }
-  s.generation_time ++;
-  if(s.generation_time%SAMPLE == 0) 
-    {paint_lattice (data);
- // g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
- //          s.generation_time, (double)s.vacancy/(X_SIZE*Y_SIZE), s.occupancy/(X_SIZE*Y_SIZE), 
-  //         s.up/s.occupancy, s.down/s.occupancy);
-    }
-  /* This is a simple occupancy check to avoid keep running the simulation
-    when there's no particle left on the lattice */
- // if (s.occupancy <= 0) {stop_simulation (data);}
-  return 0;
-  }
-
-
-
-
 // VERSION LH2
 /* Update function   */
 int update_lattice_LM (gpointer data)
   {
   // int random_neighbor;
-  int random_neighbor_state;
-  int random_spin;
+  int random_neighbor_state, random_neighboor;
+  double random_spin;
   // Energies
   double spin_energy, spin_energy_diff;
   // Boltzmann factor
@@ -652,25 +411,41 @@ int update_lattice_LM (gpointer data)
   // Random Lattice site for Monte Carlo method
   int random_x_coor, random_y_coor;
   // For the Contact Process we always consider NN interactions
-  int contact_process_radius = 1;
-  int num_neighbors = pow(contact_process_radius, 2) + pow(contact_process_radius + 1, 2);
-  int neighbors[num_neighbors];
+  //int contact_process_radius = 1;
+ // int num_neighbors = pow(contact_process_radius, 2) + pow(contact_process_radius + 1, 2);
+  //int neighbors[num_neighbors];
   // Monte Carlo: repeat for as many sites there are in the Lattice
   for (int site = 0; site < (int) (Y_SIZE*X_SIZE); site++)
     {
     /* Pick a random focal site */
-    random_x_coor = (int) floor (genrand64_real3 ()* X_SIZE);
-    random_y_coor = (int) floor (genrand64_real3 ()* Y_SIZE);
+    random_x_coor = (int) floor (genrand64_real1 ()* X_SIZE);
+    random_y_coor = (int) floor (genrand64_real1 ()* Y_SIZE);
     switch (s.lattice_configuration[random_x_coor][random_y_coor])
       {
       case 0: /* Site is empty */
-        /* Chose a random neighbor from the num_neighbors posible ones */
-        get_closest_neighbors (random_x_coor, random_y_coor, 
-                               contact_process_radius, neighbors);
-        random_neighbor_state = neighbors[(int) floor (genrand64_real3 () 
-                                          * (num_neighbors))];
+      /* Chose a random neighbor from the num_neighbors posible ones */
+      random_neighboor = (int) floor (genrand64_real3()* 4);
+			switch(random_neighboor)
+					{
+					case 0: // South
+							random_neighbor_state = s.lattice_configuration[random_x_coor][(int) ((Y_SIZE + random_y_coor-1)%Y_SIZE)]; 
+							break;
+					case 1: // North
+							random_neighbor_state =	s.lattice_configuration[random_x_coor][(int) ((Y_SIZE + random_y_coor+1)%Y_SIZE)]; 
+							break;
+					case 2: // East
+							random_neighbor_state =	s.lattice_configuration[(int) ((X_SIZE + random_x_coor-1)%X_SIZE)][random_y_coor];
+							break;
+					case 3: // West
+							random_neighbor_state =	s.lattice_configuration[(int) ((X_SIZE + random_x_coor+1)%X_SIZE)][random_y_coor];
+							break;
+					}
         /* If its random neighbor is occupied: put a copy at the focal site 
            with probability brith_rate * dt */
+
+
+
+
         if (genrand64_real2 () < s.birth_rate)
           {
           if (random_neighbor_state == 2)
@@ -690,7 +465,7 @@ int update_lattice_LM (gpointer data)
             s.occupancy ++;s.vacancy --;
             s.down ++;
             }
-          else if (random_neighbor_state == 0) {}
+          //else if (random_neighbor_state == 0) {}
           }
         break; /* break case 0 */
       case 2: /* Focal point is in the occupied, undifferentiated state */
@@ -700,10 +475,11 @@ int update_lattice_LM (gpointer data)
         reaction_rate[1] = s.differentiation_rate; // reaction 2 is differenciation
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-        if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+        transition_probability = reaction_rate[0]/total_reaction_rate;
+        if (genrand64_real2() < transition_probability) 
             {reaction = 1;} 
               else {reaction = 2;}; 
-          switch(reaction)
+        switch(reaction)
 					      {
                 case 1: // death might take place
                    if (genrand64_real2 () < s.death_rate)
@@ -737,7 +513,7 @@ int update_lattice_LM (gpointer data)
         // reaction 1 is death       
         reaction_rate[0] = s.death_rate;           
         // reaction 2 is spin flip
-        spin_energy = compute_energy (random_x_coor, random_y_coor);
+        spin_energy = energy_KS (random_x_coor, random_y_coor);
         spin_energy_diff = -2 * spin_energy;
         if (spin_energy_diff < 0)
             {
@@ -750,7 +526,8 @@ int update_lattice_LM (gpointer data)
                 }
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-         if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
+         transition_probability = reaction_rate[0]/total_reaction_rate;
+         if (genrand64_real2() <transition_probability) 
             {reaction = 1;} 
               else {reaction = 2;}; 
          switch(reaction)
@@ -780,7 +557,7 @@ int update_lattice_LM (gpointer data)
         // reaction 1 is death       
         reaction_rate[0] = s.death_rate;           
         // reaction 2 is spin flip
-        spin_energy = compute_energy (random_x_coor, random_y_coor);
+        spin_energy = energy_KS (random_x_coor, random_y_coor);
         spin_energy_diff = -2 * spin_energy;
         if (spin_energy_diff < 0)
             {
@@ -793,8 +570,9 @@ int update_lattice_LM (gpointer data)
                 }
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-         if (genrand64_real2() < (reaction_rate[0]/total_reaction_rate)) 
-            {reaction = 1;} 
+        transition_probability =  reaction_rate[0]/total_reaction_rate;
+         if (genrand64_real2() < transition_probability) 
+             {reaction = 1;} 
               else {reaction = 2;}; 
          switch(reaction)
 					      {
@@ -902,7 +680,7 @@ static void init_lattice (GtkWidget *widget, gpointer data)
 /* Callback to launch dialog with info (github's wiki) */
 static void on_button_show_about(GtkWidget *widget, gpointer data)
   {
-   GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("kimero_LAB_transparent.tiff", NULL);
+   GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file("X-Institute_logo_small.tif", NULL);
    GtkWidget *dialog = gtk_about_dialog_new();
    gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(dialog),
                                     "Contact Process Ising Model App");
@@ -1207,16 +985,6 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (frame), scale);
   gtk_container_add (GTK_CONTAINER (box), frame);
 
-
-  // make a scale bar to set Monte Carlio Bias
-  //scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
-  // we set it to its default value
-  //??
- //g_signal_connect (scale, "value-changed", G_CALLBACK (temperature_scale_moved), NULL);
-  //frame =  gtk_frame_new ("Contact-Ising bias");
-  //gtk_container_add (GTK_CONTAINER (frame), scale);
-  //gtk_container_add (GTK_CONTAINER (box), frame);
-
   // Add a verical separator to the parameter grid for order
   separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
   gtk_container_add (GTK_CONTAINER (box), separator);
@@ -1331,9 +1099,6 @@ static void activate (GtkApplication *app, gpointer user_data)
   // We finally place the frame on row 8 of our grid spanning 5 columns
   gtk_grid_attach (GTK_GRID (grid), ctrl_frame, 0, 8, 5, 1);
 
-
-
-//....
  // scale bar to set display rate 
   scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,1,100,10);
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) SAMPLE);
@@ -1344,8 +1109,6 @@ static void activate (GtkApplication *app, gpointer user_data)
   // we add that Frame to the CP box
  // gtk_container_add (GTK_CONTAINER (box), frame);
   gtk_grid_attach (GTK_GRID (grid), frame, 0, 9, 5, 1);
-//....
-
 
   
   /* Pack the main grid into the window */
