@@ -14,13 +14,22 @@
 
 /* Defaulfs */
 #define SAMPLE 100
+// default birth/colonization rate/probability
 #define BETA   0.01     
+// default mortality/extinction rate/probability
 #define DELTA  0.0001
+// default differentiation rate/probability
 #define ALPHA  0.1
-#define LAMBDA 1
-#define COUPLING -1.0
+// strength of the coupling in positive terms (J =  -1*COUPLING kBT units)
+// For NN (4 neighboors) counting twice (double, we get 8 interactions)
+// so to normalize for probability we use 1/8
+// this means that for NNN (12 neighboors) we should rather use 1/24
+#define COUPLING (1)
+// default Temperature
 #define TEMPERATURE 2.269
+// default interaction radius
 #define RADIUS 1
+// default initial condition chosen
 #define INIT 1
 
 
@@ -34,10 +43,10 @@ struct simulation
   gboolean initialized;       /* Have we been initialized? */
   int generation_time;        /* Generations simulated */
   int Ising_neighboorhood;    /* Ising Neighboorhood: r=1 (NN) vs r=2 (NNN)*/
-  int occupancy;           /* Lattice occupancy */
-  int vacancy;             /* Lattice vacancy*/
-  int up;                  /* Number of spins in the up   (+1) state */
-  int down;                /* Number of spins in the down (-1) state */
+  int occupancy;              /* Lattice occupancy */
+  int vacancy;                /* Lattice vacancy*/
+  int up;                     /* Number of spins in the up   (+1) state */
+  int down;                   /* Number of spins in the down (-1) state */
   int display_rate;           /* Display rate: to paint the lattice*/
   double birth_rate;          /* Contact Process' birth */
   double death_rate;          /* Contact Process' death */
@@ -48,93 +57,18 @@ struct simulation
 } s ;        // instance s of the structure to hold the simulation
 
 
-// Declare PUT PIXEL function to access individual pixel data on a Pixel Buffer. Implemented at the end of document.
+// Gdk Pixel Buffer functions Implemented at the end of document.
 void put_pixel(GdkPixbuf *pixbuf, int x, int y, guchar red, guchar green, guchar blue, guchar alpha);
+static void paint_a_background (gpointer data);
+static void paint_lattice (gpointer data);
 
 
+// Other Funtions
 
-
-// Stop simulation control
-static void stop_simulation (gpointer data)
-  {
-  if (s.running)
-    {
-    g_source_remove (s.run);
-    s.running = FALSE;
-    g_print ("Simulation stopped\n");
-    }
-  }
-
-
-
-/* Creates a pixel buffer and paints an image to display as default canvas */
-static void paint_a_background (gpointer data)
-  {
-  GdkPixbuf *p;
-  p = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
-  /* Paint a background canvas for start up image */
-  int x, y;
-  for (x = 0; x < X_SIZE; x++)
-    	{
-        for (y = 0; y < Y_SIZE; y++)
-            {
-            put_pixel (p, (int) x, (int) y,
-                       (guchar) x, (guchar) y, (guchar) x, 255);
-            }
-      }
-  gtk_image_set_from_pixbuf (GTK_IMAGE (data), GDK_PIXBUF (p));
-  g_object_unref (p);
-  }
-
-
-/* Function that paints the pixel buffer with the simulation data   */
-// The states are:
-//  0: vacant
-// -1: spin down
-// +1: spin up
-//  2: undifferenciated
-static void paint_lattice (gpointer data)
-  {
-  // we make a Gdk pixbuffer to paint configurations
-  GdkPixbuf *p;
-  p = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
-  /* Paint lattice configuration to a pixel buffer */
-  int x, y;
-  for (x = 0; x < X_SIZE; x++)
-    {
-    for (y = 0; y < Y_SIZE; y++)
-      {
-      switch (s.lattice_configuration[x][y])
-        {
-        case 0:	/* Empty (vacant) site  (black) */
-          put_pixel (p, (int) x, (int) y, 
-                     (guchar) 0, (guchar) 0, (guchar) 0, 255);
-          break;
-        case -1:	/* Spin down (occupied) site (green) */
-          put_pixel (p, (int) x, (int) y, 
-                       (guchar) 0, (guchar) 255, (guchar) 0, 255);
-          break;
-        case 1:	  /* Spin  up  (occupied) site (magenta) */
-          put_pixel (p, (int) x, (int) y, 
-                     (guchar) 255, (guchar) 0, (guchar) 255, 255);
-          break;
-        case 2:	/*  Un-differentiated (occupied) site (white) */
-          put_pixel (p, (int) x, (int) y, 
-                     (guchar) 255, (guchar) 255, (guchar) 255, 255);
-          break;
-        }
-      }
-    }
-  gtk_image_set_from_pixbuf (GTK_IMAGE (data), GDK_PIXBUF (p));
-  g_object_unref (p);
-  }
-
-
-
-double determine_energy (int x, int y)
+double local_energy (int x, int y)
 	{
   // Energy of site at coordinate (x,y)
-  double Energy; //in kB*T units
+  double energy; //in kB*T units
 	int up = 0;   
 	int down = 0; 
 	if (s.Ising_neighboorhood == 1)  // Nearest Neighboorhood (NN) has 4 sites
@@ -191,24 +125,20 @@ double determine_energy (int x, int y)
         if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == 1){up++;}
     	   else if (s.lattice_configuration[(int)((X_SIZE + x+1)%X_SIZE)][(int)((Y_SIZE + y+1)%Y_SIZE)] == -1){down++;}
     	  }     
-	Energy = s.J * s.lattice_configuration[x][y] * (up-down);
-  return (double) Energy;
+	energy =  s.J * (double) (s.lattice_configuration[x][y] * (up-down));
+  return energy;
 	}
 
 
-
-
-
-// VERSION LH2
 /* Update function   */
-int update_lattice_LM (gpointer data)
+int update_lattice (gpointer data)
   {
   // int random_neighbor;
   int random_neighbor_state, random_neighboor;
   double random_spin;
   // Energies
   double spin_energy, spin_energy_diff;
-  // Boltzmann factor
+  // Probability of reactrions
   double transition_probability;
   // Gillispie algorithm
   int reaction;
@@ -216,10 +146,6 @@ int update_lattice_LM (gpointer data)
   // Random Lattice site for Monte Carlo method
   int random_x_coor, random_y_coor;
   // For the Contact Process we always consider NN interactions
-  //int contact_process_radius = 1;
- // int num_neighbors = pow(contact_process_radius, 2) + pow(contact_process_radius + 1, 2);
-  //int neighbors[num_neighbors];
-  // Monte Carlo: repeat for as many sites there are in the Lattice
   for (int site = 0; site < (int) (Y_SIZE*X_SIZE); site++)
     {
     /* Pick a random focal site */
@@ -247,10 +173,6 @@ int update_lattice_LM (gpointer data)
 					}
         /* If its random neighbor is occupied: put a copy at the focal site 
            with probability brith_rate * dt */
-
-
-
-
         if (genrand64_real2 () < s.birth_rate)
           {
           if (random_neighbor_state == 2)
@@ -318,11 +240,12 @@ int update_lattice_LM (gpointer data)
         // reaction 1 is death       
         reaction_rate[0] = s.death_rate;           
         // reaction 2 is spin flip
-        spin_energy = energy_KS (random_x_coor, random_y_coor);
-        spin_energy_diff = -2 * spin_energy;
+        spin_energy = local_energy (random_x_coor, random_y_coor);
+        spin_energy_diff = -(2) * spin_energy;
         if (spin_energy_diff < 0)
             {
-            reaction_rate[1] = 1;
+            transition_probability = exp (-spin_energy_diff/s.T); 
+            reaction_rate[1] = transition_probability;//1;
             }
             else      
                 {
@@ -362,11 +285,12 @@ int update_lattice_LM (gpointer data)
         // reaction 1 is death       
         reaction_rate[0] = s.death_rate;           
         // reaction 2 is spin flip
-        spin_energy = energy_KS (random_x_coor, random_y_coor);
-        spin_energy_diff = -2 * spin_energy;
+        spin_energy = local_energy (random_x_coor, random_y_coor);
+        spin_energy_diff = -(2) * spin_energy;
         if (spin_energy_diff < 0)
             {
-            reaction_rate[1] = 1;
+            transition_probability = exp (-spin_energy_diff/s.T);
+            reaction_rate[1] = transition_probability ;//1;
             }
             else      
                 {
@@ -419,7 +343,7 @@ int update_lattice_LM (gpointer data)
 /* Time handler to connect update function to the gtk loop */
 gboolean time_handler (gpointer data)
   {
-  update_lattice_LM (data);
+  update_lattice (data);
   return TRUE;
   }
 
@@ -480,6 +404,16 @@ static void init_lattice (GtkWidget *widget, gpointer data)
    g_print ("Lattice initialized\n");
   }
 
+// Stop simulation control
+static void stop_simulation (gpointer data)
+  {
+  if (s.running)
+    {
+    g_source_remove (s.run);
+    s.running = FALSE;
+    g_print ("Simulation stopped\n");
+    }
+  }
 
 
 /* Callback to launch dialog with info (github's wiki) */
@@ -502,7 +436,6 @@ static void on_button_show_about(GtkWidget *widget, gpointer data)
   }
 
 
-
 /* Callback to start simulation */
 static void on_button_start_simulation (GtkWidget *button, gpointer data)
   {
@@ -513,7 +446,6 @@ static void on_button_start_simulation (GtkWidget *button, gpointer data)
     g_print ("Simulation started\n");
     }
   }
-
 
 
 
@@ -564,81 +496,55 @@ static void on_radio_NNN (GtkWidget *button, gpointer data)
 /* get_active() methosh is cleaner as I could use only one handler */
 // Ferro:       J = -kB
 static void on_radio_ferro (GtkWidget *button, gpointer data)
-  {char *id_radio = (char*)data;g_print("%s\n", id_radio);s.J = -1;}
+  {
+    char *id_radio = (char*)data;g_print("%s\n", id_radio);
+    s.J = -1 * (float) COUPLING;
+    }
 // anti Ferro:  J = +kB
 static void on_radio_anti_ferro(GtkWidget *button, gpointer data)
-  {char *id_radio = (char*)data;g_print("%s\n", id_radio);s.J= +1;}
-
-
-/*  Callback to respond Gtk scale slide move event */
-static void influence_radius_scale_moved (GtkRange *range, gpointer user_data)
   {
-  GtkWidget *label = user_data;
-  gdouble pos = gtk_range_get_value (range);
-  s.Ising_neighboorhood = (float) pos;
-  gchar *str = g_strdup_printf ("radius = %d", (int) pos);
-  gtk_label_set_text (GTK_LABEL (label), str);
-  g_free (str);
-  }
+    char *id_radio = (char*)data;g_print("%s\n", id_radio);
+    s.J =  1 * (float) COUPLING;
+    }
 
 
 /*  Callback to respond Gtk scale slide move event */
 static void birth_rate_scale_moved (GtkRange *range, gpointer user_data)
   {
-  //GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
   s.birth_rate = (float) pos;
- // gchar *str = g_strdup_printf ("beta = %.2f", pos);
- // gtk_label_set_text (GTK_LABEL (label), str);
- // g_free (str);
   }
 
 
 /*  Callback to respond Gtk scale slide move event */
 static void differenciation_rate_scale_moved (GtkRange *range, gpointer user_data)
   {
-  //GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
-  s.differentiation_rate = (float) pos;
-  //gchar *str = g_strdup_printf ("delta = %.2f", pos);
-  //gtk_label_set_text (GTK_LABEL (label), str);
-  //g_free (str);
+  s.differentiation_rate = (float) pos;;
   }
 
 
 /*  Callback to respond Gtk scale slide move event */
 static void death_rate_scale_moved (GtkRange *range, gpointer user_data)
   {
-  //GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
   s.death_rate = (float) pos;
-  //gchar *str = g_strdup_printf ("delta = %.2f", pos);
-  //gtk_label_set_text (GTK_LABEL (label), str);
-  //g_free (str);
   }
 
 
 /*  Callback to respond Gtk scale slide move event */
 static void temperature_scale_moved (GtkRange *range, gpointer user_data)
   {
- //GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
   s.T = (float) pos;
-  //gchar *str = g_strdup_printf ("temperature = %.2f", pos);
-  //gtk_label_set_text (GTK_LABEL (label), str);
-  //g_free (str);
   }
 
 
 /*  Callback to respond Gtk scale slide move event */
 static void display_rate_scale_moved (GtkRange *range, gpointer user_data)
   {
-  //GtkWidget *label = user_data;
   gdouble pos = gtk_range_get_value (range);
   s.display_rate = (int) pos;
-  //gchar *str = g_strdup_printf ("coupling = %.2f", pos);
-  //gtk_label_set_text (GTK_LABEL (label), str);
-  //g_free (str);
   }
 
 
@@ -665,7 +571,7 @@ static void initialize_simulation(void)
   // Temperature
   s.T = (double) TEMPERATURE;
   // Spin coupling
-  s.J = (double) COUPLING;
+  s.J = -1 * (double) COUPLING;
   /* Set simulation flags */
   s.running = FALSE;
   s.initialized = FALSE;
@@ -721,11 +627,11 @@ static void activate (GtkApplication *app, gpointer user_data)
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   // We make a radio button for the ferro magnetic case 
   radio = gtk_radio_button_new_with_label(NULL, "  J = - 1 * kB");
-  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_ferro), (gpointer)"Ferro-Magnetic (J= -kB) interaction selected");
+  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_ferro), (gpointer)"Ferro-Magnetic (J < 0) interaction selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // We make a radio button for the anti-ferro magnetic case
   radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "  J = +1 * kB");
-  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_anti_ferro), (gpointer)"Anti-Ferro-Magnetic (J= +kB) interaction selected");
+  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_anti_ferro), (gpointer)"Anti-Ferro-Magnetic (J > 0) interaction selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // Add the packing box to the Coupling strength Frame
   gtk_container_add (GTK_CONTAINER (frame), box);
@@ -941,6 +847,68 @@ void put_pixel (GdkPixbuf *pixbuf, int x, int y,
   }
 
 
+
+/* Creates a pixel buffer and paints an image to display as default canvas */
+static void paint_a_background (gpointer data)
+  {
+  GdkPixbuf *p;
+  p = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
+  /* Paint a background canvas for start up image */
+  int x, y;
+  for (x = 0; x < X_SIZE; x++)
+    	{
+        for (y = 0; y < Y_SIZE; y++)
+            {
+            put_pixel (p, (int) x, (int) y,
+                       (guchar) x, (guchar) y, (guchar) x, 255);
+            }
+      }
+  gtk_image_set_from_pixbuf (GTK_IMAGE (data), GDK_PIXBUF (p));
+  g_object_unref (p);
+  }
+
+
+/* Function that paints the pixel buffer with the simulation data   */
+// The states are:
+//  0: vacant
+// -1: spin down
+// +1: spin up
+//  2: undifferenciated
+static void paint_lattice (gpointer data)
+  {
+  // we make a Gdk pixbuffer to paint configurations
+  GdkPixbuf *p;
+  p = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
+  /* Paint lattice configuration to a pixel buffer */
+  int x, y;
+  for (x = 0; x < X_SIZE; x++)
+    {
+    for (y = 0; y < Y_SIZE; y++)
+      {
+      switch (s.lattice_configuration[x][y])
+        {
+        case 0:	/* Empty (vacant) site  (black) */
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 0, (guchar) 0, (guchar) 0, 255);
+          break;
+        case -1:	/* Spin down (occupied) site (green) */
+          put_pixel (p, (int) x, (int) y, 
+                       (guchar) 0, (guchar) 255, (guchar) 0, 255);
+          break;
+        case 1:	  /* Spin  up  (occupied) site (magenta) */
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 255, (guchar) 0, (guchar) 255, 255);
+          break;
+        case 2:	/*  Un-differentiated (occupied) site (white) */
+          put_pixel (p, (int) x, (int) y, 
+                     (guchar) 255, (guchar) 255, (guchar) 255, 255);
+          break;
+        }
+      }
+    }
+  gtk_image_set_from_pixbuf (GTK_IMAGE (data), GDK_PIXBUF (p));
+  g_object_unref (p);
+  }
 
 
 /* Main function spanning a Gtk Application object */
