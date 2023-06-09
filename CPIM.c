@@ -1,4 +1,4 @@
-// C code to expand the Contact Process code to incorporat 
+// C code to expand the Contact Process code to incorporate 
 // a basic Ising Model in a Fair fashion
 
 #include <stdlib.h>
