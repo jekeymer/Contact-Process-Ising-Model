@@ -12,7 +12,7 @@ The CPIM stand for a Lattice model mixing the Contact Process (CP)
 
 and the Ising Model (IM)
 
-	https://en.wikipedia.org/wiki/Ising_model)
+	https://en.wikipedia.org/wiki/Ising_model
 
 together in a combined model. The basic idea is to merge both models 
 in a fair fashion in order to model the spatial biology of an Ising-like 
