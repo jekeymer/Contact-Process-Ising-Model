@@ -37,8 +37,10 @@ Lattice states are:
 	+1: spin up, representing a site expressing the other reporter (plotted in magenta)
 
 Occupied sites (states: -1,2,+1) can have spin flips or differentiation reactions 
-together with particle death reactions. In the Gillespie algorithm we use 2 random numbers. 
-The fist one is used to decide which one of the competing reactions might take place. 
+together with particle death reactions. 
+
+In the Gillespie algorithm we use 2 random numbers. 
+The first one is used to decide which one of the competing reactions might take place. 
 Then, a second random number is used to decide if the chosen reaction, indeed take place (or not). 
 This way, the Poisson process is respected and probabilities are well defined.
 
