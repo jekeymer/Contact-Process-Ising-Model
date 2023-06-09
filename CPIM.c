@@ -13,17 +13,17 @@
 #define Y_SIZE 256
 
 /* Defaulfs */
-#define SAMPLE 100
+#define SAMPLE_RATE 100
 // default birth/colonization rate/probability
 #define BETA   0.01     
 // default mortality/extinction rate/probability
-#define DELTA  0.0001
+#define DELTA  0.01
 // default differentiation rate/probability
 #define ALPHA  0.1
 // strength of the coupling in positive terms (J =  -1*COUPLING kBT units)
-// For NN (4 neighboors) counting twice (double, we get 8 interactions)
-// so to normalize for probability we use 1/8
-// this means that for NNN (12 neighboors) we should rather use 1/24
+// we should have 1/2 if we do not want to douple count pairs
+// therefore
+// use a positive number!
 #define COUPLING (1)
 // default Temperature
 #define TEMPERATURE 2.269
@@ -138,11 +138,12 @@ int update_lattice (gpointer data)
   double random_spin;
   // Energies
   double spin_energy, spin_energy_diff;
-  // Probability of reactrions
+  // Probability of reactions
   double transition_probability;
   // Gillispie algorithm
   int reaction;
-  double total_reaction_rate , reaction_rate[2];
+  double total_reaction_rate , reaction_rate[2], random_number;
+  double reaction_probability;
   // Random Lattice site for Monte Carlo method
   int random_x_coor, random_y_coor;
   // For the Contact Process we always consider NN interactions
@@ -202,10 +203,11 @@ int update_lattice (gpointer data)
         reaction_rate[1] = s.differentiation_rate; // reaction 2 is differenciation
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-        transition_probability = reaction_rate[0]/total_reaction_rate;
-        if (genrand64_real2() < transition_probability) 
+        reaction_probability = reaction_rate[0]/total_reaction_rate;
+        random_number = genrand64_real2();
+        if (random_number < reaction_probability) 
             {reaction = 1;} 
-              else {reaction = 2;}; 
+              else if (random_number >= reaction_probability) {reaction = 2;}; 
         switch(reaction)
 					      {
                 case 1: // death might take place
@@ -242,25 +244,25 @@ int update_lattice (gpointer data)
         // reaction 2 is spin flip
         spin_energy = local_energy (random_x_coor, random_y_coor);
         spin_energy_diff = -(2) * spin_energy;
-        if (spin_energy_diff < 0)
-            {
-            transition_probability = exp (-spin_energy_diff/s.T); 
-            reaction_rate[1] = transition_probability;//1;
+        if (spin_energy_diff <= 0)
+            { 
+            reaction_rate[1] = 1;
             }
             else      
                 {
                 transition_probability = exp (-spin_energy_diff/s.T);
                 reaction_rate[1] = transition_probability;
                 }
-				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
-        // First we decide which reaction of the two might take place
-         transition_probability = reaction_rate[0]/total_reaction_rate;
-         if (genrand64_real2() <transition_probability) 
+				 total_reaction_rate = reaction_rate[0] + reaction_rate[1];
+         // First we decide which reaction of the two might take place
+         reaction_probability = reaction_rate[0]/total_reaction_rate;
+         random_number = genrand64_real2();
+         if (random_number < reaction_probability) 
             {reaction = 1;} 
-              else {reaction = 2;}; 
+              else if (random_number >= reaction_probability)  {reaction = 2;}; 
          switch(reaction)
 					      {
-                case 1:  // death might take place
+                case 1: // death might take place
                   if (genrand64_real2 () < s.death_rate)
                         {
                         s.lattice_configuration[random_x_coor][random_y_coor] = 0;
@@ -269,6 +271,7 @@ int update_lattice (gpointer data)
                         }
                   break;
                 case 2: // spin flip might take place
+
                   if (spin_energy_diff < 0 || 
                                               genrand64_real2 () < transition_probability)
                         {
@@ -287,10 +290,9 @@ int update_lattice (gpointer data)
         // reaction 2 is spin flip
         spin_energy = local_energy (random_x_coor, random_y_coor);
         spin_energy_diff = -(2) * spin_energy;
-        if (spin_energy_diff < 0)
+        if (spin_energy_diff <= 0)
             {
-            transition_probability = exp (-spin_energy_diff/s.T);
-            reaction_rate[1] = transition_probability ;//1;
+            reaction_rate[1] =  1;
             }
             else      
                 {
@@ -299,18 +301,19 @@ int update_lattice (gpointer data)
                 }
 				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
         // First we decide which reaction of the two might take place
-        transition_probability =  reaction_rate[0]/total_reaction_rate;
-         if (genrand64_real2() < transition_probability) 
+        reaction_probability =  reaction_rate[0]/total_reaction_rate;
+        random_number = genrand64_real2();
+        if (random_number < reaction_probability) 
              {reaction = 1;} 
-              else {reaction = 2;}; 
-         switch(reaction)
+              else if ( random_number >= reaction_probability) {reaction = 2;}; 
+        switch(reaction)
 					      {
                 case 1:  // death might take place
                   if (genrand64_real2 () < s.death_rate)
                         {
                         s.lattice_configuration[random_x_coor][random_y_coor] = 0;
                         s.occupancy --; s.vacancy ++;
-                        s.up --;
+                        s.down --;
                         }
                   break;
                 case 2: // spin flip might take place
@@ -328,13 +331,11 @@ int update_lattice (gpointer data)
     }
   s.generation_time ++;
   if(s.generation_time%s.display_rate == 0) 
-    {paint_lattice (data);
-  g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
-           s.generation_time, (double) s.vacancy/(double) (Y_SIZE*X_SIZE), (double) s.occupancy/(double) (Y_SIZE*X_SIZE), (double) s.up/(double) (s.occupancy), (double) s.down/(double) s.occupancy);
-    }
-  /* This is a simple occupancy check to avoid keep running the simulation
-    when there's no particle left on the lattice */
-  //if (s.occupancy <= 0) {stop_simulation (data);}
+      {
+      paint_lattice (data);
+      g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n", 
+           s.generation_time, (double) s.vacancy / (double) (Y_SIZE*X_SIZE), (double) s.occupancy/(double) (Y_SIZE*X_SIZE), (double) s.up/(double) (s.occupancy), (double) s.down/(double) s.occupancy);
+     }
   return 0;
 }
 
@@ -361,9 +362,9 @@ static void init_lattice (GtkWidget *widget, gpointer data)
       s.lattice_configuration[x][y]= 0;
       }
     }
-  s.occupancy = (int) 0;
-  s.up = (int) 0;
-  s.down = (int) 0;
+  s.occupancy = 0;
+  s.up =  0;
+  s.down = 0;
   s.vacancy = (int) X_SIZE*Y_SIZE;
   switch(s.init_option)
     {
@@ -382,12 +383,13 @@ static void init_lattice (GtkWidget *widget, gpointer data)
               }
             break;
       case 2:
+            /* Set an undifferentiated site in the middle of the lattice*/
               s.lattice_configuration[(int) X_SIZE/2][(int) Y_SIZE/2] = 2;
               s.vacancy--; s.occupancy++;
 
             break;
       case 3:
-            // Add a cluster with undiff particles
+            // Set a small (r=2) cluster with undifferentiated sites in the middle of the lattice
             int r =2;
                         for (x = 128-r; x < 128+r; x++)
                                 for (y = 128-r; y < 128+r; y++)
@@ -396,6 +398,15 @@ static void init_lattice (GtkWidget *widget, gpointer data)
                                         s.occupancy ++; s.vacancy --;
                                         }
                         break;
+            break;
+      case 4:
+            // Se a lattice fully occupied with undufferenciated particels
+            for (x = 0; x < (int) X_SIZE; x++)
+               for (y = 0; y < (int) Y_SIZE; y++)
+                    {
+                    s.lattice_configuration[x][y]=2;
+                    s.occupancy ++; s.vacancy --;
+                    }
             break;
     }
    s.initialized = TRUE;
@@ -457,7 +468,7 @@ static void on_button_stop_simulation (GtkWidget *button, gpointer data)
 
 
 /* Callback to change Initial conditions -- dirty */ 
-/* get_active() methosh is cleaner as I could use only one handler */
+/* get_active() method is cleaner as I could use only one handler */
 // Init 1
 static void on_radio_initial_condition_1 (GtkWidget *button, gpointer data)
   {
@@ -476,6 +487,13 @@ static void on_radio_initial_condition_3 (GtkWidget *button, gpointer data)
   char *id_radio = (char*)data;g_print("%s\n", id_radio);
   s.init_option = 3;
   }
+// Init 4
+static void on_radio_initial_condition_4 (GtkWidget *button, gpointer data)
+  {
+  char *id_radio = (char*)data;g_print("%s\n", id_radio);
+  s.init_option = 4;
+  }
+
 
 /* Callback to change Ising NN (r=1) vs NNN (r=2) conditions -- dirty */ 
 /* get_active() methosh is cleaner as I could use only one handler */
@@ -576,7 +594,7 @@ static void initialize_simulation(void)
   s.running = FALSE;
   s.initialized = FALSE;
   // Display rate to paint the lattice
-  s.display_rate = (int) SAMPLE;
+  s.display_rate = (int) SAMPLE_RATE;
 }
 
 
@@ -644,9 +662,9 @@ static void activate (GtkApplication *app, gpointer user_data)
   // to control the parameters of the Contact Process
   // we mnake a box
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-  
+  // BIRTH
   // scale bar to set birth rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) BETA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), NULL);
@@ -655,9 +673,9 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (frame), scale);
   // we add that Frame to the CP box
   gtk_container_add (GTK_CONTAINER (box), frame);
-  
+  // DEATH
   // scale bar to set death rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0,0.5,0.0001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0,1,0.0001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) DELTA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (death_rate_scale_moved), NULL);
@@ -666,9 +684,9 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (frame), scale);
   // we add that Frame to the CP box
   gtk_container_add (GTK_CONTAINER (box), frame);
-
+  // ALPHA
   // scale bar to set the cell differenciation rate 
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.01);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) ALPHA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (differenciation_rate_scale_moved), NULL);
@@ -686,9 +704,9 @@ static void activate (GtkApplication *app, gpointer user_data)
   // Ising Model (IM) Box
   // to control the parameter of the Ising model
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-
+  // TEMPERATURE
   // make a scale bar to set Temperature
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.01,10,0.01);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0001,30,0.001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) TEMPERATURE);
   g_signal_connect (scale, "value-changed", G_CALLBACK (temperature_scale_moved), NULL);
@@ -700,8 +718,6 @@ static void activate (GtkApplication *app, gpointer user_data)
   separator = gtk_separator_new (GTK_ORIENTATION_HORIZONTAL);
   gtk_container_add (GTK_CONTAINER (box), separator);
   
-
-
   // add the grid contasining the pre-packed radio buttons to control spin coupling
   frame =  gtk_frame_new ("Spin interaction");
   gtk_container_add (GTK_CONTAINER (frame), grid);
@@ -727,7 +743,11 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // -3-
   radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Single un-differenciated cluster");
-  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_3), (gpointer)"option 3 selected");
+  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_3) , (gpointer)"option 3 selected");
+  gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
+  // -4-
+  radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Fully occupied un-differenciated lattice");
+  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_4), (gpointer)"option 4 selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // make IC label for Initial Conditions page and put it in the Notebook
   label = gtk_label_new ("Init Lattice");
@@ -749,8 +769,8 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (parameters_frame), notebook);
 
 
-/////////////////////////////////////////////////////////
 
+  // MAIN WINDOW
   /* Create a new window, and set its title */
   window = gtk_application_window_new (app);
   gtk_window_set_title (GTK_WINDOW (window), "Contact Process Ising Model");
@@ -765,8 +785,8 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), parameters_frame, 0, 0, 5, 3);
 
 
-/////////////////////////////////////////////////////////////////
 
+  // PIX BUFFER
   /* Pixel buffer @ start up and default canvas display */
   pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, 0, 8, X_SIZE, Y_SIZE);
   image_lattice = gtk_image_new_from_pixbuf (pixbuf);
@@ -775,10 +795,8 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_grid_attach (GTK_GRID (grid), image_lattice, 0, 7, 5, 1); 
   /* Position (0,3) spanning 5 col and 1 row */
 
-//////////////////////////////////////////////////////////////////
-
-
-  // Simulation controls
+ 
+  // Simulation CONTROLS
   GtkWidget *button, *ctrl_frame, *button_box;
 
   button_box = gtk_button_box_new (GTK_ORIENTATION_HORIZONTAL);
@@ -810,15 +828,17 @@ static void activate (GtkApplication *app, gpointer user_data)
   // We finally place the frame on row 8 of our grid spanning 5 columns
   gtk_grid_attach (GTK_GRID (grid), ctrl_frame, 0, 8, 5, 1);
 
- // scale bar to set display rate 
+
+  // FRAME_SAMPLE_RATE 
+  // scale bar to set display rate 
   scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,1,100,10);
-  gtk_range_set_value (GTK_RANGE(scale), (gfloat) SAMPLE);
+  gtk_range_set_value (GTK_RANGE(scale), (gfloat) SAMPLE_RATE);
   g_signal_connect (scale, "value-changed", G_CALLBACK (display_rate_scale_moved), NULL);
   // we pack it in a Frame
   frame = gtk_frame_new ("Display rate");
   gtk_container_add (GTK_CONTAINER (frame), scale );
   // we add that Frame to the CP box
- // gtk_container_add (GTK_CONTAINER (box), frame);
+  // gtk_container_add (GTK_CONTAINER (box), frame);
   gtk_grid_attach (GTK_GRID (grid), frame, 0, 9, 5, 1);
 
   
