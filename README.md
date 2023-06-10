@@ -60,7 +60,7 @@ To compare what happens otherwise (using Gillespie), we also implement a version
 
 	https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
 
-This is due to the fact that Metopolis is not suppose to represent true rates. It is only meant to draw configurations consistent with the ensamble average defined by the Isin Model's statistical mechanics.
+This is due to the fact that Metropolis is not suppose to represent true rates. It is only meant to draw configurations consistent with the ensamble average defined by the Isin Model's statistical mechanics.
 
 We see that if Gillespie is ran along with the Metropolis algorithm, the flipping operator affects the rates of the Contact Process in an artificial fashion. To see this the interested hacker can test by herself. For this, we made the function:
 
