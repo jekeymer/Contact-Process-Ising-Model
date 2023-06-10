@@ -39,26 +39,31 @@ Lattice states are:
 	-1: spin down, representing a site expressing one reporter gene (plotted in green) 
 	+1: spin up, representing a site expressing the other reporter (plotted in magenta)
 
-Occupied sites (states: -1,2,+1) can have spin flips or differentiation reactions 
-together with particle death reactions. 
+Occupied sites can be in states: {-1,2,+1}. Transformations of these states can ocurr due to spin flip or differentiation reactions. Birth and death process lead to colonization together with particle death reactions which are incorporated in the Contact process. Thus the full system of states of the process {0, -1, +1, 2}.
 
-So we use only Gillespie (version Partial Gillespie) for the differentiation reaction function 
+METROPOLIS vs GILLESPIE
+
+So we use only Gillespie (version Partial Gillespie) for the differentiation reaction function. This is implemented in the function.
+	
 	update_lattice_2
 
-For the spin flips, we only do it (ran Metropolis) if the site survides the CP Monte Carlo step.
-Thus no Gillespie is used here!
+For the spin flips, we only ran the Metropolis algorithm only if the site visited survives the CP Monte Carlo step. Thus no Gillespie is used here!
 
-To compare what happens otherwise, we use Gillespie for flips and see that the Metropolis Algorithm is
-not compatible with Gillespie as it is not suppose to represent rates. 
-We see then (if ran) it affects the contact process death rate in an artificial fashion.
-For this test we made the function:
+To compare what happens otherwise (using Gillespie), we use implement Gillespie for flips and see that the Metropolis Algorithm is not compatible with Gillespie as it is not suppose to represent rates. It is only meant to draw configurations consistent with the ensamble average.
+
+We see that if Gillespie is ran along with the Metropolis algorithm, the flipping operator affects the rates of the Contact Process in an artificial fashion. To see  this test we made the function:
+
 	update_lattice_1
 
-In the Gillespie algorithm we use 2 random numbers. 
-The first one is used to decide which one of the competing reactions might take place. 
-Then, a second random number is used to decide if the chosen reaction, indeed take place (or not). 
-This way, the Poisson process is respected and probabilities are well defined.
+which can be ran by changing the following line at the top of the code
 
+#define GILLESPIE_OPTION 2 // 1 : full ; 2: partial
+
+GILLESPIE
+
+In the Gillespie algorithm we use 2 random numbers. The first one is used to decide which one of the competing reactions might take place. Then, a second random number is used to decide if the chosen reaction, indeed take place (or not). This way, the Poisson process is respected and probabilities are well defined.
+
+COMPILE
 
 To compile type:
 	  make
