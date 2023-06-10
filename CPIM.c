@@ -33,6 +33,7 @@
 #define INIT 1
 
 // Gillespie policy
+// version 2 is the correct approach as Metropolis and Gillespie are not Friends
 #define GILLESPIE_OPTION 2 // 1 : full ; 2: partial 
 
 /* Structure with the simulation data */

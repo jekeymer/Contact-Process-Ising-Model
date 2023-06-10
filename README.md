@@ -1,3 +1,4 @@
+
 # Contact Process Ising Model
 The Contact Process Ising Model (CPIM) picks up on the Contact Process (CP)
 
@@ -14,8 +15,9 @@ and the Ising Model (IM)
 
 	https://en.wikipedia.org/wiki/Ising_model
 
-together in a combined model. The basic idea is to merge both models 
-in a fair fashion in order to model the spatial biology of an Ising-like 
+together in a combined model. Even thoughh Metropolis and Gillespie are not compatible.
+
+The basic idea is to merge both models in order to model the spatial biology of an Ising-like 
 genetic network expressed in a quasi-2D colony of bacteria
 growing on a surface of solid agar. 
 
@@ -29,6 +31,7 @@ By fair we mean here using the Gillespie algorithm
 in the Monte Carlo method updating the Lattice. 
 
 This is a fundamental requirement as there are Lattice states with two possible reactions.
+Of these only differentiation is comesurable as it does represent a rate. Metropolis flips are not.
 
 Lattice states are: 
 	0: vacancy, representing empty sites suitable for colonization by its neightboors (plotted in black) 
@@ -38,6 +41,16 @@ Lattice states are:
 
 Occupied sites (states: -1,2,+1) can have spin flips or differentiation reactions 
 together with particle death reactions. 
+
+So we use only Gillespie (version Partial Gillespie) for the differentiation reaction function 
+	update_lattice_2
+For the spin flisp, we only do it if the cell survides the time step. Thus no Gillespie.
+
+To compare what happens otherwise, we use gillespie for flips and see that the Metropolis Algorithm is
+not compatible with Gillespie as it is not suppose to represent rates. 
+We see then (if runned) it affects the contact process death rate in an artificial fashion.
+For this test we made the function:
+	update_lattice_1
 
 In the Gillespie algorithm we use 2 random numbers. 
 The first one is used to decide which one of the competing reactions might take place. 
