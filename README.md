@@ -44,7 +44,9 @@ together with particle death reactions.
 
 So we use only Gillespie (version Partial Gillespie) for the differentiation reaction function 
 	update_lattice_2
-For the spin flisp, we only do it if the cell survides the time step. Thus no Gillespie.
+
+For the spin flips, we only do it (ran Metropolis) if the site survides the CP Monte Carlo step.
+Thus no Gillespie is used here!
 
 To compare what happens otherwise, we use Gillespie for flips and see that the Metropolis Algorithm is
 not compatible with Gillespie as it is not suppose to represent rates. 
