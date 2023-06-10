@@ -31,7 +31,7 @@ By fair we mean here using the Gillespie algorithm
 in the Monte Carlo method updating the Lattice. 
 
 This is a fundamental requirement as there are Lattice states with two possible reactions.
-Of these only differentiation is comesurable as it does represent a rate. Metropolis flips are not.
+Of these only differentiation is commensurable as it does represent a rate. Metropolis flips are not.
 
 Lattice states are: 
 	0: vacancy, representing empty sites suitable for colonization by its neightboors (plotted in black) 
@@ -46,9 +46,9 @@ So we use only Gillespie (version Partial Gillespie) for the differentiation rea
 	update_lattice_2
 For the spin flisp, we only do it if the cell survides the time step. Thus no Gillespie.
 
-To compare what happens otherwise, we use gillespie for flips and see that the Metropolis Algorithm is
+To compare what happens otherwise, we use Gillespie for flips and see that the Metropolis Algorithm is
 not compatible with Gillespie as it is not suppose to represent rates. 
-We see then (if runned) it affects the contact process death rate in an artificial fashion.
+We see then (if ran) it affects the contact process death rate in an artificial fashion.
 For this test we made the function:
 	update_lattice_1
 
