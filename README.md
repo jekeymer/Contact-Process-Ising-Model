@@ -34,9 +34,13 @@ This is a fundamental requirement as there are Lattice states with two possible 
 Of these only differentiation is commensurable as it does represent a rate. Metropolis flips are not.
 
 Lattice states are: 
+
 	0: vacancy, representing empty sites suitable for colonization by its neightboors (plotted in black) 
+
 	2: undifferentiated state (plotted in white) 
+
 	-1: spin down, representing a site expressing one reporter gene (plotted in green) 
+
 	+1: spin up, representing a site expressing the other reporter (plotted in magenta)
 
 Occupied sites can be in states: {-1,2,+1}. Transformations of these states can ocurr due to spin flip or differentiation reactions. Birth and death process lead to colonization together with particle death reactions which are incorporated in the Contact process. Thus the full system of states of the process {0, -1, +1, 2}.
@@ -49,9 +53,9 @@ So we use only Gillespie (version Partial Gillespie) for the differentiation rea
 
 For the spin flips, we only ran the Metropolis algorithm only if the site visited survives the CP Monte Carlo step. Thus no Gillespie is used here!
 
-To compare what happens otherwise (using Gillespie), we use implement Gillespie for flips and see that the Metropolis Algorithm is not compatible with Gillespie as it is not suppose to represent rates. It is only meant to draw configurations consistent with the ensamble average.
+To compare what happens otherwise (using Gillespie), we also implement a version of the update lattice code using the Gillespie algorith, for flips and see how the Metropolis Algorithm is not compatible with Gillespie. This is due to the fact that Metopolis is not suppose to represent true rates. It is only meant to draw configurations consistent with the ensamble average defined by the Isin Model's statistical mechanics.
 
-We see that if Gillespie is ran along with the Metropolis algorithm, the flipping operator affects the rates of the Contact Process in an artificial fashion. To see  this test we made the function:
+We see that if Gillespie is ran along with the Metropolis algorithm, the flipping operator affects the rates of the Contact Process in an artificial fashion. To see this the interested hacker can test by herself. For this, we made the function:
 
 	update_lattice_1
 
@@ -65,5 +69,5 @@ In the Gillespie algorithm we use 2 random numbers. The first one is used to dec
 
 COMPILE
 
-To compile type:
+To compile just type:
 	  make
