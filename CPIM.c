@@ -390,9 +390,8 @@ static void init_lattice (GtkWidget *widget, gpointer data)
             break;
       case 3:
             // Set a small (r=2) cluster with undifferentiated sites in the middle of the lattice
-            int r =2;
-                        for (x = 128-r; x < 128+r; x++)
-                                for (y = 128-r; y < 128+r; y++)
+           for (x = 126; x < 130; x++)
+                                for (y = 126; y < 130; y++)
                                         {
                                         s.lattice_configuration[x][y]=2;
                                         s.occupancy ++; s.vacancy --;
