@@ -16,7 +16,7 @@ together with the Ising Model (IM)
 	https://en.wikipedia.org/wiki/Ising_model
 
 
-Even thoughh Metropolis and Gillespie are not fully compatible, here we experiment with the idea of using both together. Two versions are tested: Full Gillespie and Partial Gillespie.
+Even though Metropolis and Gillespie are not fully compatible, here we experiment with the idea of using both together. Two versions are tested: Full Gillespie and Partial Gillespie.
 
 The basic idea is to merge both models in order to model the spatial biology of an Ising-like (synthetic) genetic network expressed in a quasi-2D colony of bacteria
 growing on a surface of solid agar. 
