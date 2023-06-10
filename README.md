@@ -7,22 +7,25 @@ The Contact Process Ising Model (CPIM) picks up on the Contact Process (CP)
 as a model of 2D spatial growth and mix it to the Ising Model (IM), 
 a model for the magnetic interaction.
 
-The CPIM stand for a Lattice model mixing the Contact Process (CP)
+The letters CPIM stand for Contact Process (CP)
 
 	https://github.com/jekeymer/Contact-Process
 
-and the Ising Model (IM)
+together with the Ising Model (IM)
 
 	https://en.wikipedia.org/wiki/Ising_model
 
-together in a combined model. Even thoughh Metropolis and Gillespie are not compatible.
 
-The basic idea is to merge both models in order to model the spatial biology of an Ising-like 
-genetic network expressed in a quasi-2D colony of bacteria
+Even thoughh Metropolis and Gillespie are not fully compatible, here we experiment with the idea of using both together. Two versions are tested: Full Gillespie and Partial Gillespie.
+
+The basic idea is to merge both models in order to model the spatial biology of an Ising-like (synthetic) genetic network expressed in a quasi-2D colony of bacteria
 growing on a surface of solid agar. 
 
-The genetic network consist of a bi-stable genetic system of 
-reporter genes (RFP vs GFP) coupled by auto-inducer molecules (HSLs)
+The genetic network consist of a bi-stable genetic system (switch) of two
+reporter genes (RFP vs GFP) which are spatially coupled by diffusive auto-inducer molecules (HSLs) which act as quoromones (hormones)as they are know from the biology of quorum sensing.
+
+	https://en.wikipedia.org/wiki/Quorum_sensing
+
 
 By fair we mean here using the Gillespie algorithm
 
@@ -53,7 +56,11 @@ So we use only Gillespie (version Partial Gillespie) for the differentiation rea
 
 For the spin flips, we only ran the Metropolis algorithm only if the site visited survives the CP Monte Carlo step. Thus no Gillespie is used here!
 
-To compare what happens otherwise (using Gillespie), we also implement a version of the update lattice code using the Gillespie algorith, for flips and see how the Metropolis Algorithm is not compatible with Gillespie. This is due to the fact that Metopolis is not suppose to represent true rates. It is only meant to draw configurations consistent with the ensamble average defined by the Isin Model's statistical mechanics.
+To compare what happens otherwise (using Gillespie), we also implement a version of the update lattice code using the Gillespie algorith, for flips and see how the Metropolis Algorithm is not compatible with Gillespie. 
+
+	https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm
+
+This is due to the fact that Metopolis is not suppose to represent true rates. It is only meant to draw configurations consistent with the ensamble average defined by the Isin Model's statistical mechanics.
 
 We see that if Gillespie is ran along with the Metropolis algorithm, the flipping operator affects the rates of the Contact Process in an artificial fashion. To see this the interested hacker can test by herself. For this, we made the function:
 
