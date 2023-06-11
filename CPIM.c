@@ -133,7 +133,7 @@ double local_energy (int x, int y)
 	}
 
 
-/* Update function full Gillespie  */
+/* Update function: version with a full Gillespie implementation  */
 int update_lattice_1 (gpointer data)
   {
   // int random_neighbor;
@@ -347,7 +347,7 @@ int update_lattice_1 (gpointer data)
 
 
 
-/* Update function partial Gillespie  */
+/* Update function: version with aS partial Gillespie  */
 int update_lattice_2 (gpointer data)
   {
   // int random_neighbor;
@@ -946,7 +946,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_3) , (gpointer)"option 3 selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // -4-
-  radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Single differenciated cluster");
+  radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Single differenciated cluster (spin up or down)");
   g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_4), (gpointer)"option 4 selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // -5-
