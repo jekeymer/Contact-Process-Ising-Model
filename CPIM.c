@@ -577,6 +577,24 @@ static void init_lattice (GtkWidget *widget, gpointer data)
                         break;
             break;
       case 4:
+            for (x = (int) X_SIZE/2 - 2 ; x < (int) X_SIZE/2 + 2; x++)
+                                for (y = (int) X_SIZE/2 - 2; y < (int) X_SIZE/2 + 2; y++)
+                                    {
+                                      random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
+                                      if (random_spin == 1)
+                                        {
+                                        s.lattice_configuration[x][y] = random_spin;
+                                        s.up ++; s.vacancy--; s.occupancy++;
+                                        }
+                                        else if (random_spin == -1)
+                                           {
+                                           s.lattice_configuration[x][y] = random_spin;
+                                           s.down ++; s.vacancy --; s.occupancy++;
+                                           }
+                                    }
+         
+            break;
+      case 5:
             // Se a lattice fully occupied with undufferenciated particels
             for (x = 0; x < (int) X_SIZE; x++)
                for (y = 0; y < (int) Y_SIZE; y++)
@@ -670,7 +688,12 @@ static void on_radio_initial_condition_4 (GtkWidget *button, gpointer data)
   char *id_radio = (char*)data;g_print("%s\n", id_radio);
   s.init_option = 4;
   }
-
+// Init 5
+static void on_radio_initial_condition_5 (GtkWidget *button, gpointer data)
+  {
+  char *id_radio = (char*)data;g_print("%s\n", id_radio);
+  s.init_option = 5;
+  }
 
 /* Callback to change Ising NN (r=1) vs NNN (r=2) conditions -- dirty */
 /* get_active() methosh is cleaner as I could use only one handler */
@@ -923,8 +946,12 @@ static void activate (GtkApplication *app, gpointer user_data)
   g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_3) , (gpointer)"option 3 selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // -4-
-  radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Fully occupied un-differenciated lattice");
+  radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Single differenciated cluster");
   g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_4), (gpointer)"option 4 selected");
+  gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
+  // -5-
+  radio = gtk_radio_button_new_with_label_from_widget(GTK_RADIO_BUTTON(radio), "Fully occupied un-differenciated lattice");
+  g_signal_connect(GTK_TOGGLE_BUTTON(radio), "pressed", G_CALLBACK(on_radio_initial_condition_5), (gpointer)"option 4 selected");
   gtk_box_pack_start(GTK_BOX(box), radio, TRUE, TRUE, 0);
   // make IC label for Initial Conditions page and put it in the Notebook
   label = gtk_label_new ("Init Lattice");
