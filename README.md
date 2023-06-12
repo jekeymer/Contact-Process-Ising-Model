@@ -22,7 +22,7 @@ growing on a surface of solid agar.
 Notice that as cells are macroscopic object, we separate two different time-scales and organizational (spatial) scales. 
 
 (i) one is the scale of the full cell, which undergoes birth, death, colonization process. We model this by the CP. 
-(ii) another scale is the scale of chemical reactions withing living cells. These reactions are only considered possible as long as the cell is alive. That is it survives the Monte Carlo stop of the CP. Thus, spin flips of the IM & differentiation (gentic induction) only take place once a cell survive. 
+(ii) another scale is the scale of chemical reactions withing living cells. These reactions are only considered possible as long as the cell is alive. That is it survives the Monte Carlo step of the CP. Thus, spin flips of the IM & differentiation (gentic induction) only take place once a cell survive. 
 
 The genetic network we are interested in modelling consist of a bi-stable genetic system (switch) of two reporter genes (RFP vs GFP) which are spatially coupled by diffusive auto-inducer molecules (HSLs) which act as quoromones (hormones) as they are know from the biology of quorum sensing.
 
@@ -57,4 +57,4 @@ or use gcc and the Gtk configuration tool by typing:
 
 	 gcc CPIM.c mt64.c -lm -o CPIM `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
 
-	 
+
