@@ -32,9 +32,7 @@
 // default initial condition chosen
 #define INIT 1
 
-// Gillespie policy
-// version 2 is the correct approach as Metropolis and Gillespie are not Friends
-#define GILLESPIE_OPTION 2 // 1 : full ; 2: partial 
+
 
 /* Structure with the simulation data */
 struct simulation
@@ -133,8 +131,9 @@ double local_energy (int x, int y)
 	}
 
 
-/* Update function: version with a full Gillespie implementation  */
-int update_lattice_1 (gpointer data)
+
+/* Update function */
+int update_lattice (gpointer data)
   {
   // int random_neighbor;
   int random_neighbor_state, random_neighboor;
@@ -143,11 +142,6 @@ int update_lattice_1 (gpointer data)
   double spin_energy, spin_energy_diff;
   // Probability of reactions
   double transition_probability;
-  // Gillispie algorithm
-  int reaction;
-  double total_reaction_rate , reaction_rate[2], random_number;
-  double reaction_probability;
-  // Random Lattice site for Monte Carlo method
   int random_x_coor, random_y_coor;
   // For the Contact Process we always consider NN interactions
   for (int site = 0; site < (int) (Y_SIZE*X_SIZE); site++)
@@ -177,8 +171,7 @@ int update_lattice_1 (gpointer data)
 					}
         /* If its random neighbor is occupied: put a copy at the focal site
            with probability brith_rate * dt */
-        transition_probability = s.birth_rate;
-        if (genrand64_real2 () < transition_probability)
+        if (genrand64_real2 () < s.birth_rate)
            {
            switch(random_neighbor_state)
              {
@@ -203,28 +196,16 @@ int update_lattice_1 (gpointer data)
           }
         break; /* break case 0 */
       case 2: /* Focal point is in the occupied, undifferentiated state */
-      // Here we beed the Gilliespie Algorithm as 2 reactions
-      // with different rates are possible (death and differentiation)
-        reaction_rate[0] = s.death_rate;           // reaction 1 is death
-        reaction_rate[1] = s.differentiation_rate; // reaction 2 is differenciation
-				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
-        // First we decide which reaction of the two might take place
-        reaction_probability = reaction_rate[0]/total_reaction_rate;
-        random_number = genrand64_real2();
-        if (random_number < reaction_probability)
-            {reaction = 1;}
-              else if (random_number >= reaction_probability) {reaction = 2;};
-        switch(reaction)
-					      {
-                case 1: // death might take place
-                   if (genrand64_real2 () < s.death_rate)
+        // First we check if the site survives
+        // No need for Gillespie as cells are macroscopic compare to its 
+        // inner components which can undertake reactions only if the cell
+        // indeed exists
+        if (genrand64_real2 () < s.death_rate)
                        {
                         s.lattice_configuration[random_x_coor][random_y_coor] = 0;
                         s.occupancy --; s.vacancy ++;
                        }
-                  break;
-                case 2: // differentiation might take place
-                   if (genrand64_real2 () < s.differentiation_rate)
+             else if (genrand64_real2 () < s.differentiation_rate)
                       {
                        /* Set an occupied site in the middle of the lattice */
                        random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
@@ -239,222 +220,6 @@ int update_lattice_1 (gpointer data)
                            s.down ++;
                            }
                       }
-                  break;
-                }
-        break;
-      case 1: /* Focal point is in the up (+1) state */
-        // Here we beed the Gilliespie Algorithm as 2 reactions
-        // with different rates are possible (death and spin flip)
-        // reaction 1 is death
-        reaction_rate[0] = s.death_rate;
-        // reaction 2 is spin flip
-        spin_energy = local_energy (random_x_coor, random_y_coor);
-        spin_energy_diff = -(2) * spin_energy;
-        if (spin_energy_diff <= 0)
-            {
-            reaction_rate[1] = 1;
-            }
-            else
-                {
-                transition_probability = exp (-spin_energy_diff/s.T);
-                reaction_rate[1] = transition_probability;
-                }
-				 total_reaction_rate = reaction_rate[0] + reaction_rate[1];
-         // First we decide which reaction of the two might take place
-         reaction_probability = reaction_rate[0]/total_reaction_rate;
-         random_number = genrand64_real2();
-         if (random_number < reaction_probability)
-            {reaction = 1;}
-              else if (random_number >= reaction_probability)  {reaction = 2;};
-         switch(reaction)
-					      {
-                case 1: // death might take place
-                  if (genrand64_real2 () < s.death_rate)
-                        {
-                        s.lattice_configuration[random_x_coor][random_y_coor] = 0;
-                        s.occupancy --; s.vacancy ++;
-                        s.up --;
-                        }
-                  break;
-                case 2: // spin flip might take place
-
-                  if (spin_energy_diff < 0 ||
-                                              genrand64_real2 () < transition_probability)
-                        {
-                        s.lattice_configuration[random_x_coor][random_y_coor] = -1;
-                        s.up --;
-                        s.down ++;
-                        }
-                  break;
-                }
-        break;
-      case -1: /* Focal point is in the down (-1) state */
-        // Here we beed the Gilliespie Algorithm as 2 reactions
-        // with different rates are possible (death and spin flip)
-        // reaction 1 is death
-        reaction_rate[0] = s.death_rate;
-        // reaction 2 is spin flip
-        spin_energy = local_energy (random_x_coor, random_y_coor);
-        spin_energy_diff = -(2) * spin_energy;
-        if (spin_energy_diff <= 0)
-            {
-            reaction_rate[1] =  1;
-            }
-            else
-                {
-                transition_probability = exp (-spin_energy_diff/s.T);
-                reaction_rate[1] = transition_probability;
-                }
-				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
-        // First we decide which reaction of the two might take place
-        reaction_probability =  reaction_rate[0]/total_reaction_rate;
-        random_number = genrand64_real2();
-        if (random_number < reaction_probability)
-             {reaction = 1;}
-              else if ( random_number >= reaction_probability) {reaction = 2;};
-        switch(reaction)
-					      {
-                case 1:  // death might take place
-                  if (genrand64_real2 () < s.death_rate)
-                        {
-                        s.lattice_configuration[random_x_coor][random_y_coor] = 0;
-                        s.occupancy --; s.vacancy ++;
-                        s.down --;
-                        }
-                  break;
-                case 2: // spin flip might take place
-                  if (spin_energy_diff < 0 ||
-                                              genrand64_real2 () < transition_probability)
-                        {
-                        s.lattice_configuration[random_x_coor][random_y_coor] = 1;
-                        s.up ++;
-                        s.down --;
-                        }
-                  break;
-                }
-        break;
-      }
-    }
-  s.generation_time ++;
-  if(s.generation_time%s.display_rate == 0)
-      {
-      paint_lattice (data);
-      g_print ("Gen: %d \t Vacancy: %f \t Occupancy: %f \t Up: %f \t Down: %f\n",
-           s.generation_time, (double) s.vacancy / (double) (Y_SIZE*X_SIZE), (double) s.occupancy/(double) (Y_SIZE*X_SIZE), (double) s.up/(double) (s.occupancy), (double) s.down/(double) s.occupancy);
-     }
-  return 0;
-}
-
-
-
-/* Update function: version with aS partial Gillespie  */
-int update_lattice_2 (gpointer data)
-  {
-  // int random_neighbor;
-  int random_neighbor_state, random_neighboor;
-  double random_spin;
-  // Energies
-  double spin_energy, spin_energy_diff;
-  // Probability of reactions
-  double transition_probability;
-  // Gillispie algorithm
-  int reaction;
-  double total_reaction_rate , reaction_rate[2], random_number;
-  double reaction_probability;
-  // Random Lattice site for Monte Carlo method
-  int random_x_coor, random_y_coor;
-  // For the Contact Process we always consider NN interactions
-  for (int site = 0; site < (int) (Y_SIZE*X_SIZE); site++)
-    {
-    /* Pick a random focal site */
-    random_x_coor = (int) floor (genrand64_real1 ()* X_SIZE);
-    random_y_coor = (int) floor (genrand64_real1 ()* Y_SIZE);
-    switch (s.lattice_configuration[random_x_coor][random_y_coor])
-      {
-      case 0: /* Site is empty */
-      /* Chose a random neighbor from the num_neighbors posible ones */
-      random_neighboor = (int) floor (genrand64_real3()* 4);
-			switch(random_neighboor)
-					{
-					case 0: // South
-							random_neighbor_state = s.lattice_configuration[random_x_coor][(int) ((Y_SIZE + random_y_coor-1)%Y_SIZE)]; 
-							break;
-					case 1: // North
-							random_neighbor_state =	s.lattice_configuration[random_x_coor][(int) ((Y_SIZE + random_y_coor+1)%Y_SIZE)]; 
-							break;
-					case 2: // East
-							random_neighbor_state =	s.lattice_configuration[(int) ((X_SIZE + random_x_coor-1)%X_SIZE)][random_y_coor];
-							break;
-					case 3: // West
-							random_neighbor_state =	s.lattice_configuration[(int) ((X_SIZE + random_x_coor+1)%X_SIZE)][random_y_coor];
-							break;
-					}
-        /* If its random neighbor is occupied: put a copy at the focal site
-           with probability brith_rate * dt */
-        transition_probability = s.birth_rate;
-        if (genrand64_real2 () < transition_probability)
-           {
-           switch(random_neighbor_state)
-             {
-              case 2: 
-                s.lattice_configuration[random_x_coor][random_y_coor] = 2;
-                s.occupancy ++; s.vacancy --;
-               break;
-              case 1: 
-                s.lattice_configuration[random_x_coor][random_y_coor] = 1;
-                s.occupancy ++; s.vacancy --;
-                s.up ++;
-               break;
-              case -1:
-                s.lattice_configuration[random_x_coor][random_y_coor] = -1;
-                s.occupancy ++;s.vacancy --;
-                s.down ++;
-               break; 
-              case 0:
-                s.lattice_configuration[random_x_coor][random_y_coor] = 0;
-                break;
-             }
-          }
-        break; /* break case 0 */
-      case 2: /* Focal point is in the occupied, undifferentiated state */
-      // Here we beed the Gilliespie Algorithm as 2 reactions
-      // with different rates are possible (death and differentiation)
-        reaction_rate[0] = s.death_rate;           // reaction 1 is death
-        reaction_rate[1] = s.differentiation_rate; // reaction 2 is differenciation
-				total_reaction_rate = reaction_rate[0] + reaction_rate[1];
-        // First we decide which reaction of the two might take place
-        reaction_probability = reaction_rate[0]/total_reaction_rate;
-        random_number = genrand64_real2();
-        if (random_number < reaction_probability)
-            {reaction = 1;}
-              else if (random_number >= reaction_probability) {reaction = 2;};
-        switch(reaction)
-					      {
-                case 1: // death might take place
-                   if (genrand64_real2 () < s.death_rate)
-                       {
-                        s.lattice_configuration[random_x_coor][random_y_coor] = 0;
-                        s.occupancy --; s.vacancy ++;
-                       }
-                  break;
-                case 2: // differentiation might take place
-                   if (genrand64_real2 () < s.differentiation_rate)
-                      {
-                       /* Set an occupied site in the middle of the lattice */
-                       random_spin = (int) ((genrand64_int64 () % 2) * 2) - 1;
-                      if (random_spin == 1)
-                          {
-                           s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
-                           s.up ++;
-                           }
-                       else if (random_spin == -1)
-                           {
-                           s.lattice_configuration[random_x_coor][random_y_coor] = random_spin;
-                           s.down ++;
-                           }
-                      }
-                  break;
-                }
         break;
       case 1: /* Focal point is in the up (+1) state */
         // We skip Gillespie because of separation of scales
@@ -476,11 +241,7 @@ int update_lattice_2 (gpointer data)
                         }
         break;
       case -1: /* Focal point is in the down (-1) state */
-        // Here we beed the Gilliespie Algorithm as 2 reactions
-        // with different rates are possible (death and spin flip)
-        // reaction 1 is death
-        reaction_rate[0] = s.death_rate;
-        // reaction 2 is spin flip
+        // We skip Gillespie because of separation of scales
         spin_energy = local_energy (random_x_coor, random_y_coor);
         spin_energy_diff = -(2) * spin_energy;
         transition_probability = exp (-spin_energy_diff/s.T);
@@ -512,19 +273,12 @@ int update_lattice_2 (gpointer data)
 
 
 
-
-
-
 /* Time handler to connect update function to the gtk loop */
 gboolean time_handler (gpointer data)
-  {
-  switch(GILLESPIE_OPTION) 
-    {
-      case 1: update_lattice_1 (data); break;
-      case 2: update_lattice_2 (data); break;
+   { 
+    update_lattice (data);
+    return TRUE;
     }
-  return TRUE;
-  }
 
 
 /* Callback to initialize lattice*/
