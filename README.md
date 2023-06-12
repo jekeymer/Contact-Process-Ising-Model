@@ -39,7 +39,7 @@ Lattice states of the model are:
 
 	+1: spin up, representing a site expressing the other reporter (plotted in magenta)
 
-Occupied sites can be in states: {-1,2,+1}. Transformations of these states can ocurr due to spin flip or differentiation reactions. Birth and death process lead to colonization together with particle death reactions which are incorporated in the Contact process. Thus the full system of states of the process {0, -1, +1, 2}.
+Occupied sites can be in states: {-1,2,+1}. Transformations of these states can ocurr due to spin flip or differentiation reactions. Birth and death process lead to colonization together with particle death reactions which are incorporated in the Contact process. Thus the full system of states of the process is {0, -1, +1, 2}.
 
 
 For the spin flips, we only ran the Metropolis algorithm only if the site visited survives the CP Monte Carlo step. 
