@@ -24,7 +24,7 @@ Notice that as cells are macroscopic object, we separate two different time-scal
 (i) one is the scale of the full cell, which undergoes birth, death, colonization process. We model this by the CP. 
 (ii) another scale is the scale of chemical reactions withing living cells. These reactions are only considered possible as long as the cell is alive. That is it survives the Monte Carlo step of the CP. Thus, spin flips of the IM & differentiation (gentic induction) only take place once a cell survive. 
 
-The genetic network we are interested in modelling consist of a bi-stable genetic system (switch) of two reporter genes (RFP vs GFP) which are spatially coupled by diffusive auto-inducer molecules (HSLs) which act as quoromones (hormones) as they are know from the biology of quorum sensing.
+The genetic network we are interested in modelling is made of a bi-stable genetic switch consisting of two reporter genes (RFP vs GFP) which are spatially coupled by diffusive auto-inducer molecules (HSLs) which act as quoromones (hormones) as they are know from the biology of quorum sensing.
 
 	https://en.wikipedia.org/wiki/Quorum_sensing
 
