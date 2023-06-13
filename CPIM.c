@@ -15,9 +15,9 @@
 /* Defaulfs */
 #define SAMPLE_RATE 100
 // default birth/colonization rate/probability
-#define BETA   0.01
+#define BETA   0.003
 // default mortality/extinction rate/probability
-#define DELTA  0.001
+#define DELTA  0.0001
 // default differentiation rate/probability
 #define ALPHA  0.1
 // strength of the coupling in positive terms (J =  -1*COUPLING kBT units)
@@ -618,7 +618,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   // BIRTH
   // scale bar to set birth rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0000,1,0.0001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.000000,0.01,0.00001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) BETA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), NULL);
@@ -629,7 +629,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (box), frame);
   // DEATH
   // scale bar to set death rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0000,1,0.0001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.000000,0.01,0.00001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) DELTA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (death_rate_scale_moved), NULL);
