@@ -660,7 +660,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   // TEMPERATURE
   // make a scale bar to set Temperature
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.0001,30,0.001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.000000001,8,0.00001);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) TEMPERATURE);
   g_signal_connect (scale, "value-changed", G_CALLBACK (temperature_scale_moved), NULL);
