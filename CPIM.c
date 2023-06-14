@@ -14,19 +14,31 @@
 
 /* Defaulfs */
 #define SAMPLE_RATE 100
-// default birth/colonization rate/probability
-#define BETA   0.003
-// default mortality/extinction rate/probability
+// default birth/colonization rate/probability and scale ranges
+#define BETA  0.003
+#define BETA_STEP 0.00001
+#define BETA_MIN 0.000000
+#define BETA_MAX 0.005
+// default mortality/extinction rate/probability and scale ranges
 #define DELTA  0.0001
-// default differentiation rate/probability
+#define DELTA_STEP  0.00001
+#define DELTA_MIN 0.000000
+#define DELTA_MAX 0.005
+// default differentiation rate/probability and scale ranges
 #define ALPHA  0.1
+#define ALPHA_STEP 0.01
+#define ALPHA_MIN  0.00
+#define ALPHA_MAX  1.0
 // strength of the coupling in positive terms (J =  -1*COUPLING kBT units)
 // we should have 1/2 if we do not want to douple count pairs
 // therefore
 // use a positive number!
 #define COUPLING (1)
-// default Temperature
+// default Temperature and scale ranges
 #define TEMPERATURE 2.269
+#define TEMPERATURE_STEP 0.00001
+#define TEMPERATURE_MIN  0.0000001
+#define TEMPERATURE_MAX  15 
 // default interaction radius
 #define RADIUS 1
 // default initial condition chosen
@@ -618,7 +630,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   // BIRTH
   // scale bar to set birth rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.000000,0.01,0.00001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,(gdouble) BETA_MIN, (gdouble) BETA_MAX, (gdouble) BETA_STEP);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) BETA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (birth_rate_scale_moved), NULL);
@@ -629,7 +641,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (box), frame);
   // DEATH
   // scale bar to set death rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.000000,0.01,0.00001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, (gdouble) DELTA_MIN, (gdouble) DELTA_MAX, (gdouble) DELTA_STEP);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) DELTA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (death_rate_scale_moved), NULL);
@@ -640,7 +652,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   gtk_container_add (GTK_CONTAINER (box), frame);
   // ALPHA
   // scale bar to set the cell differenciation rate
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,1,0.001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,(gdouble) ALPHA_MIN, (gdouble) ALPHA_MAX, (gdouble) ALPHA_STEP);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) ALPHA);
   g_signal_connect (scale, "value-changed", G_CALLBACK (differenciation_rate_scale_moved), NULL);
@@ -660,7 +672,7 @@ static void activate (GtkApplication *app, gpointer user_data)
   box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
   // TEMPERATURE
   // make a scale bar to set Temperature
-  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0.000000001,8,0.00001);
+  scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, (gdouble) TEMPERATURE_MIN, (gdouble) TEMPERATURE_MAX, (gdouble) TEMPERATURE_STEP);
   // we set it to its default value
   gtk_range_set_value (GTK_RANGE(scale), (gfloat) TEMPERATURE);
   g_signal_connect (scale, "value-changed", G_CALLBACK (temperature_scale_moved), NULL);
