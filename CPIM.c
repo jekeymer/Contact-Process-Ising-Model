@@ -1,5 +1,5 @@
-// C code to expand the Contact Process code to incorporate 
-// a basic Ising Model in a Fair fashion
+// C code to expand the Contact Process (CP) code to incorporate 
+// a basic Ising Model into the occupancy states of the CP
 
 #include <stdlib.h>
 #include <gtk/gtk.h> /* GUI, Gtk library */
