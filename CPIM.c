@@ -36,7 +36,7 @@
 #define COUPLING (1)
 // default Temperature and scale ranges
 #define TEMPERATURE 2.269
-#define TEMPERATURE_STEP 0.00001
+#define TEMPERATURE_STEP 0.0000001
 #define TEMPERATURE_MIN  0.0000001
 #define TEMPERATURE_MAX  15 
 // default interaction radius
@@ -148,7 +148,7 @@ double local_energy (int x, int y)
 int update_lattice (gpointer data)
   {
   // int random_neighbor;
-  int random_neighbor_state, random_neighboor;
+  int random_neighbor_state, random_neighbor;
   double random_spin;
   // Energies
   double spin_energy, spin_energy_diff;
@@ -165,8 +165,8 @@ int update_lattice (gpointer data)
       {
       case 0: /* Site is empty */
       /* Chose a random neighbor from the num_neighbors posible ones */
-      random_neighboor = (int) floor (genrand64_real3()* 4);
-			switch(random_neighboor)
+      random_neighbor = (int) floor (genrand64_real3()* 4);
+			switch(random_neighbor)
 					{
 					case 0: // South
 							random_neighbor_state = s.lattice_configuration[random_x_coor][(int) ((Y_SIZE + random_y_coor-1)%Y_SIZE)]; 
