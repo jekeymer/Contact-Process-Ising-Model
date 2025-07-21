@@ -2,7 +2,11 @@
 Model/code here was used to write
 
 	https://bmcbiol.biomedcentral.com/articles/10.1186/s12915-023-01681-4
+ 
+Commented in Mathematical Oncology
 
+	https://mathematical-oncology.org/art/280/
+ 
 The Contact Process Ising Model (CPIM) picks up on the Contact Process (CP)
 
 	https://github.com/jekeymer/Contact-Process/wiki 
